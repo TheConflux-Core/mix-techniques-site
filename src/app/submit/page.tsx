@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
 import SubmissionForm from "@/components/SubmissionForm";
 
 export default function SubmitPage() {
@@ -10,8 +9,6 @@ export default function SubmitPage() {
       <div className="fixed inset-0 carbon-fiber pointer-events-none" />
       {/* Warm light ambience */}
       <div className="fixed inset-0 warm-light-bg pointer-events-none opacity-50" />
-
-      <Navbar />
 
       <main className="flex-1 flex items-start justify-center px-4 py-12 md:py-16 relative z-10">
         <div className="w-full max-w-2xl">
