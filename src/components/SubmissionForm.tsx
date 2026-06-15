@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
 import WaveformPreview from "./WaveformPreview";
+import { useAuth } from "@/lib/auth";
+import { slugify } from "@/lib/slugify";
+import { createClient } from "@/lib/supabase/client";
 import { GENRE_OPTIONS } from "@/lib/types";
 
 interface FormData {
@@ -24,6 +28,9 @@ const ACCEPTED_TYPES = ["audio/wav", "audio/mp3", "audio/mpeg", "audio/flac", "a
 const ACCEPTED_EXTENSIONS = [".wav", ".mp3", ".flac"];
 
 export default function SubmissionForm() {
+  const { user } = useAuth();
+  const supabase = createClient();
+  const [profileSlug, setProfileSlug] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
@@ -41,6 +48,7 @@ export default function SubmissionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showSocial, setShowSocial] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -179,6 +187,33 @@ export default function SubmissionForm() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  // Pre-fill name/email from auth user and fetch profile slug
+  useEffect(() => {
+    if (!user || prefilled) return;
+
+    const displayName = user.user_metadata?.display_name || user.user_metadata?.full_name || "";
+    const email = user.email || "";
+
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name || displayName,
+      email: prev.email || email,
+    }));
+    setPrefilled(true);
+
+    // Fetch profile to get display_name for slug
+    supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.display_name) {
+          setProfileSlug(slugify(data.display_name));
+        }
+      });
+  }, [user, prefilled, supabase]);
+
   // Generate sparkles on success
   useEffect(() => {
     if (isSuccess) {
@@ -211,9 +246,17 @@ export default function SubmissionForm() {
         <h2 className="font-[family-name:var(--font-display)] text-3xl text-[#F0E6D3] mb-4 uppercase tracking-wider brass-hover">
           Submission Received
         </h2>
-        <p className="font-[family-name:var(--font-mono)] text-[#D4A843] text-lg tagline-glow">
+        <p className="font-[family-name:var(--font-mono)] text-[#D4A843] text-lg tagline-glow mb-8">
           Your mix has been submitted. We&apos;ll be in touch.
         </p>
+        {profileSlug && (
+          <Link
+            href={`/${profileSlug}`}
+            className="inline-block font-[family-name:var(--font-mono)] text-sm text-[#D4A843]/80 hover:text-[#D4A843] border border-[#3A2818]/60 hover:border-[#D4A843]/40 px-6 py-3 rounded-lg transition-all tracking-wider"
+          >
+            View your profile →
+          </Link>
+        )}
       </div>
     );
   }

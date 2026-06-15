@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { Profile, Submission } from "@/lib/types";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import SubmissionList from "@/components/profile/SubmissionList";
+import OwnerSubmissions from "@/components/profile/OwnerSubmissions";
 import ScheduleSection from "@/components/profile/ScheduleSection";
 
 export default function ProfilePage() {
@@ -140,12 +141,16 @@ export default function ProfilePage() {
           <ProfileHeader profile={profile} isOwner={isOwner} />
         </div>
 
-        {/* Submissions */}
+        {/* Submissions — owner sees enhanced view, visitors see public list */}
         <div className="card-float noise carbon-fiber-walnut rounded-2xl p-8 mb-8">
           <h2 className="font-[family-name:var(--font-display)] text-xl text-[#F0E6D3] uppercase tracking-wider mb-6 heading-wave">
-            Submissions
+            {isOwner ? "My Submissions" : "Submissions"}
           </h2>
-          <SubmissionList submissions={submissions} />
+          {isOwner ? (
+            <OwnerSubmissions submissions={submissions} />
+          ) : (
+            <SubmissionList submissions={submissions} />
+          )}
         </div>
 
         {/* Schedule */}
