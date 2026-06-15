@@ -1,3 +1,18 @@
+export interface Profile {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  location: string | null;
+  genre: string | null;
+  website: string | null;
+  social_links: SocialLinks;
+  email?: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Season {
   id: number;
   number: number;

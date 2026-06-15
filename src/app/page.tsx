@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
+import Navbar from "@/components/Navbar";
 
 // Generate particles with fixed seeds to avoid hydration mismatch
 function generateParticles(count: number) {
@@ -85,6 +86,8 @@ export default function Home() {
       />
 
       <div className="custom-cursor flex flex-col min-h-screen relative overflow-hidden carbon-fiber">
+        <Navbar />
+
         {/* Background warm light ambience */}
         <div className="fixed inset-0 warm-light-bg pointer-events-none" />
 
