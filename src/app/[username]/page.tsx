@@ -59,7 +59,7 @@ export default function ProfilePage() {
         try {
           const { data: { user: authUser } } = await supabase.auth.getUser();
           if (authUser?.id === matched.id) {
-            userEmail = authUser.email || "";
+            userEmail = authUser?.email || "";
           }
         } catch {}
       }
