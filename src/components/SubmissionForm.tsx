@@ -138,19 +138,40 @@ export default function SubmissionForm() {
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file!);
-      formData.append("metadata", JSON.stringify({
-        name: form.name,
-        email: form.email,
-        location: form.location || null,
-        genre: form.genre,
-        track_title: form.trackTitle,
-        social_links: form.socialLinks,
-        waveform_data: peaks,
-        duration: duration,
-      }));
-      const res = await fetch("/api/submissions", { method: "POST", body: formData });
+      // Step 1: Upload file directly to Supabase Storage from the browser
+      const ext = file!.name.split(".").pop()?.toLowerCase() || "mp3";
+      const timestamp = Date.now();
+      const sanitizedName = file!.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `${timestamp}_${sanitizedName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("submissions")
+        .upload(storagePath, file!, {
+          contentType: file!.type || `audio/${ext}`,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      // Step 2: Send metadata + storage path to API (no file, just JSON)
+      const res = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          location: form.location || null,
+          genre: form.genre,
+          track_title: form.trackTitle,
+          social_links: form.socialLinks,
+          track_url: storagePath,
+          waveform_data: peaks,
+          file_format: ext,
+          duration: duration,
+        }),
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Submission failed");
