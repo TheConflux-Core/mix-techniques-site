@@ -51,8 +51,34 @@ export default function SubmissionForm() {
   const [prefilled, setPrefilled] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
+  const [currentEpisode, setCurrentEpisode] = useState<{ id: string; episode_number: number; title: string; description: string | null } | null>(null);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Fetch current open episode on mount
+  useEffect(() => {
+    const fetchEpisode = async () => {
+      try {
+        const res = await fetch("/api/episodes/current");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.episode) {
+            setCurrentEpisode(data.episode);
+            // Check if user already submitted to this episode
+            if (user) {
+              const subRes = await fetch(`/api/submissions/check?episode_id=${data.episode.id}`);
+              if (subRes.ok) {
+                const subData = await subRes.json();
+                if (subData.exists) setAlreadySubmitted(true);
+              }
+            }
+          }
+        }
+      } catch { /* silent */ }
+    };
+    fetchEpisode();
+  }, [user]);
 
   const computeWaveform = useCallback(async (audioFile: File) => {
     try {
@@ -170,6 +196,7 @@ export default function SubmissionForm() {
           waveform_data: peaks,
           file_format: ext,
           duration: duration,
+          episode_id: currentEpisode?.id || null,
         }),
       });
       if (!res.ok) {
@@ -294,6 +321,26 @@ export default function SubmissionForm() {
       {error && (
         <div className="bg-[#C4392A]/10 border border-[#C4392A]/30 text-[#C4392A] px-4 py-3 rounded-lg font-[family-name:var(--font-mono)] text-sm error-shake">
           {error}
+        </div>
+      )}
+
+      {/* Episode info banner */}
+      {currentEpisode ? (
+        alreadySubmitted ? (
+          <div className="bg-[#D4A843]/10 border border-[#D4A843]/30 text-[#D4A843] px-4 py-3 rounded-lg font-[family-name:var(--font-mono)] text-sm">
+            ✓ You have already submitted to <strong>Ep.{String(currentEpisode.episode_number).padStart(2, "0")}: {currentEpisode.title || "Untitled"}</strong>. One submission per artist per episode.
+          </div>
+        ) : (
+          <div className="bg-blue-900/20 border border-blue-800/30 text-blue-400 px-4 py-3 rounded-lg font-[family-name:var(--font-mono)] text-sm">
+            🎵 Submitting to <strong>Ep.{String(currentEpisode.episode_number).padStart(2, "0")}: {currentEpisode.title || "Untitled"}</strong>
+            {currentEpisode.description && (
+              <span className="block text-blue-400/60 text-xs mt-1">{currentEpisode.description}</span>
+            )}
+          </div>
+        )
+      ) : (
+        <div className="bg-[#F0E6D3]/5 border border-[#3A2818] text-[#F0E6D3]/40 px-4 py-3 rounded-lg font-[family-name:var(--font-mono)] text-sm">
+          No episodes currently accepting submissions. Check back soon.
         </div>
       )}
 
@@ -482,7 +529,7 @@ export default function SubmissionForm() {
       {/* Submit Button — Big, Gold, 3D */}
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !currentEpisode || alreadySubmitted}
         className="btn-3d w-full text-[#1A0F0A] font-[family-name:var(--font-display)] text-lg uppercase tracking-[0.2em] py-5 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-2"
       >
         {isSubmitting ? (
@@ -493,6 +540,10 @@ export default function SubmissionForm() {
             </svg>
             Submitting...
           </span>
+        ) : alreadySubmitted ? (
+          "Already Submitted"
+        ) : !currentEpisode ? (
+          "No Open Episodes"
         ) : (
           "Submit Your Mix"
         )}

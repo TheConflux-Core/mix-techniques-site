@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, location, genre, track_title, social_links, track_url, waveform_data, file_format, duration } = body;
+    const { name, email, location, genre, track_title, social_links, track_url, waveform_data, file_format, duration, episode_id } = body;
 
     // Server-side validation
     if (!name?.trim()) {
@@ -40,6 +40,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Track file not found in storage" }, { status: 400 });
     }
 
+    // If episode_id provided, verify episode is accepting submissions
+    if (episode_id) {
+      const { data: episode } = await supabase
+        .from("episodes")
+        .select("id, status, episode_number")
+        .eq("id", episode_id)
+        .single();
+
+      if (!episode) {
+        return NextResponse.json({ error: "Episode not found" }, { status: 400 });
+      }
+      if (episode.status !== "setup") {
+        return NextResponse.json({ error: "Submissions are closed for this episode" }, { status: 400 });
+      }
+
+      // Check for duplicate submission (same email + episode)
+      const { data: existing } = await supabase
+        .from("submissions")
+        .select("id")
+        .eq("email", email.trim())
+        .eq("episode_id", episode_id)
+        .limit(1)
+        .single();
+
+      if (existing) {
+        return NextResponse.json(
+          { error: "You have already submitted to this episode. One submission per artist per episode." },
+          { status: 409 }
+        );
+      }
+    }
+
     // Get active season
     const { data: season } = await supabase
       .from("seasons")
@@ -60,6 +92,7 @@ export async function POST(request: NextRequest) {
       waveform_data: waveform_data || null,
       file_format: file_format || null,
       season_id: season?.id || null,
+      episode_id: episode_id || null,
     };
 
     // Only add user_id if the column exists (optional — uncomment after adding column)
