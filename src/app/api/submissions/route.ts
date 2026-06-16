@@ -48,22 +48,26 @@ export async function POST(request: NextRequest) {
       .single();
 
     // Insert submission record
+    const insertData: Record<string, any> = {
+      name: name.trim(),
+      email: email.trim(),
+      location: location?.trim() || null,
+      genre,
+      social_links: social_links || {},
+      track_url,
+      track_title: track_title?.trim() || null,
+      track_duration: duration ? String(duration) : null,
+      waveform_data: waveform_data || null,
+      file_format: file_format || null,
+      season_id: season?.id || null,
+    };
+
+    // Only add user_id if the column exists (optional — uncomment after adding column)
+    // if (session?.user?.id) insertData.user_id = session.user.id;
+
     const { data: submission, error: insertError } = await supabase
       .from("submissions")
-      .insert({
-        name: name.trim(),
-        email: email.trim(),
-        location: location?.trim() || null,
-        genre,
-        social_links: social_links || {},
-        track_url,
-        track_title: track_title?.trim() || null,
-        track_duration: duration ? String(duration) : null,
-        waveform_data: waveform_data || null,
-        file_format: file_format || null,
-        season_id: season?.id || null,
-        user_id: session.user.id,
-      })
+      .insert(insertData)
       .select()
       .single();
 
