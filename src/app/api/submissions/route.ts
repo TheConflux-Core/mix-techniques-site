@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
       episode_id: episode_id || null,
     };
 
-    // Only add user_id if the column exists (optional — uncomment after adding column)
-    // if (session?.user?.id) insertData.user_id = session.user.id;
+    // Add user_id for user→submission linking
+    if (session?.user?.id) insertData.user_id = session.user.id;
 
     const { data: submission, error: insertError } = await supabase
       .from("submissions")
