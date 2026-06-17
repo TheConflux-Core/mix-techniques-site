@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       return NextResponse.json({ exists: false });
     }
 
@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ exists: false });
     }
 
-    const userEmail = user.email;
+    // Use email for duplicate check (user_id column not yet in DB)
+    const userEmail = session.user.email;
     if (!userEmail) {
       return NextResponse.json({ exists: false });
     }

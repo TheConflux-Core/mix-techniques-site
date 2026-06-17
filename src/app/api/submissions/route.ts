@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Validate session with Supabase Auth (refreshes stale JWT)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Verify user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -38,7 +37,6 @@ export async function POST(request: NextRequest) {
       .createSignedUrl(track_url, 60);
 
     if (storageCheck) {
-      console.error("Storage check failed:", JSON.stringify(storageCheck, null, 2));
       return NextResponse.json({ error: "Track file not found in storage" }, { status: 400 });
     }
 
@@ -74,18 +72,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get active season (may not exist yet)
-    let season = null;
-    try {
-      const { data } = await supabase
-        .from("seasons")
-        .select("id")
-        .eq("status", "active")
-        .single();
-      season = data;
-    } catch (seasonErr) {
-      console.error("Season lookup error (non-fatal):", seasonErr);
-    }
+    // Get active season
+    const { data: season } = await supabase
+      .from("seasons")
+      .select("id")
+      .eq("status", "active")
+      .single();
 
     // Insert submission record
     const insertData: Record<string, any> = {
@@ -103,11 +95,10 @@ export async function POST(request: NextRequest) {
       episode_id: episode_id || null,
     };
 
-    // Use admin client for insert (bypasses RLS)
-    const admin = createAdminClient();
-    if (user?.id) insertData.user_id = user.id;
+    // Add user_id for user→submission linking
+    if (session?.user?.id) insertData.user_id = session.user.id;
 
-    const { data: submission, error: insertError } = await admin
+    const { data: submission, error: insertError } = await supabase
       .from("submissions")
       .insert(insertData)
       .select()
@@ -115,19 +106,17 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error("Insert error:", JSON.stringify(insertError, null, 2));
-      console.error("Insert data was:", JSON.stringify(insertData, null, 2));
       return NextResponse.json(
-        { error: `Failed to save submission: ${insertError.message}` },
+        { error: "Failed to save submission" },
         { status: 500 }
       );
     }
 
     return NextResponse.json(submission, { status: 201 });
   } catch (err: any) {
-    console.error("Submission error:", err?.message || err);
-    console.error("Full error:", JSON.stringify(err, null, 2));
+    console.error("Submission error:", err);
     return NextResponse.json(
-      { error: `Internal server error: ${err?.message || "unknown"}` },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
