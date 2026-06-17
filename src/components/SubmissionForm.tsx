@@ -161,6 +161,10 @@ export default function SubmissionForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!user) {
+      setError("You must be logged in to submit.");
+      return;
+    }
     if (!validate()) return;
     setIsSubmitting(true);
     try {
