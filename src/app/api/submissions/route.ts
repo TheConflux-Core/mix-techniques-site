@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const db = createServiceClient();
 
     // Verify user is authenticated
     const { data: { session } } = await supabase.auth.getSession();
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the file exists in storage
-    const { error: storageCheck } = await supabase.storage
+    const { error: storageCheck } = await db.storage
       .from("submissions")
       .createSignedUrl(track_url, 60);
 
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // If episode_id provided, verify episode is accepting submissions
     if (episode_id) {
-      const { data: episode } = await supabase
+      const { data: episode } = await db
         .from("episodes")
         .select("id, status, episode_number, submissions_open")
         .eq("id", episode_id)
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check for duplicate submission (same email + episode)
-      const { data: existing } = await supabase
+      const { data: existing } = await db
         .from("submissions")
         .select("id")
         .eq("email", email.trim())
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get active season
-    const { data: season } = await supabase
+    const { data: season } = await db
       .from("seasons")
       .select("id")
       .eq("status", "active")
@@ -98,7 +100,7 @@ export async function POST(request: NextRequest) {
     // Add user_id for user→submission linking
     if (session?.user?.id) insertData.user_id = session.user.id;
 
-    const { data: submission, error: insertError } = await supabase
+    const { data: submission, error: insertError } = await db
       .from("submissions")
       .insert(insertData)
       .select()
