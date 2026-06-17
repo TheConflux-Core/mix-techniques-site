@@ -44,14 +44,14 @@ export async function POST(request: NextRequest) {
     if (episode_id) {
       const { data: episode } = await supabase
         .from("episodes")
-        .select("id, status, episode_number")
+        .select("id, status, episode_number, submissions_open")
         .eq("id", episode_id)
         .single();
 
       if (!episode) {
         return NextResponse.json({ error: "Episode not found" }, { status: 400 });
       }
-      if (episode.status !== "setup") {
+      if (!episode.submissions_open) {
         return NextResponse.json({ error: "Submissions are closed for this episode" }, { status: 400 });
       }
 

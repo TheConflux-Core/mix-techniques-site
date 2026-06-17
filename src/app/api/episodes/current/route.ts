@@ -6,11 +6,11 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    // Get the most recent episode where submissions are open (status = setup)
+    // Get the most recent episode where submissions are open
     const { data, error } = await supabase
       .from("episodes")
-      .select("id, episode_number, title, description, status, season_id")
-      .eq("status", "setup")
+      .select("id, episode_number, title, description, status, season_id, submissions_open")
+      .eq("submissions_open", true)
       .order("episode_number", { ascending: false })
       .limit(1)
       .single();
