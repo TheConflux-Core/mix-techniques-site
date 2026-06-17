@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -102,40 +103,15 @@ export async function POST(request: NextRequest) {
       episode_id: episode_id || null,
     };
 
-    // Try insert with user_id first, fall back without it if column doesn't exist
-    let submission = null;
-    let insertError = null;
+    // Use admin client for insert (bypasses RLS)
+    const admin = createAdminClient();
+    if (user?.id) insertData.user_id = user.id;
 
-    if (user?.id) {
-      const withUser = { ...insertData, user_id: user.id };
-      const result = await supabase
-        .from("submissions")
-        .insert(withUser)
-        .select()
-        .single();
-      submission = result.data;
-      insertError = result.error;
-
-      // If column doesn't exist, retry without user_id
-      if (insertError && insertError.message?.includes("user_id")) {
-        console.warn("user_id column missing, retrying without it");
-        const fallback = await supabase
-          .from("submissions")
-          .insert(insertData)
-          .select()
-          .single();
-        submission = fallback.data;
-        insertError = fallback.error;
-      }
-    } else {
-      const result = await supabase
-        .from("submissions")
-        .insert(insertData)
-        .select()
-        .single();
-      submission = result.data;
-      insertError = result.error;
-    }
+    const { data: submission, error: insertError } = await admin
+      .from("submissions")
+      .insert(insertData)
+      .select()
+      .single();
 
     if (insertError) {
       console.error("Insert error:", JSON.stringify(insertError, null, 2));
