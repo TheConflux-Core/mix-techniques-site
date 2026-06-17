@@ -1,8 +1,35 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import SubmissionForm from "@/components/SubmissionForm";
 
 export default function SubmitPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div
+          className="text-sm tracking-[3px] uppercase"
+          style={{ color: "rgba(212,168,67,0.4)" }}
+        >
+          Loading…
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
     <div className="flex flex-col min-h-screen page-enter">
       {/* Carbon fiber background */}
