@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       .createSignedUrl(track_url, 60);
 
     if (storageCheck) {
+      console.error("Storage check failed:", JSON.stringify(storageCheck, null, 2));
       return NextResponse.json({ error: "Track file not found in storage" }, { status: 400 });
     }
 
@@ -72,12 +73,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get active season
-    const { data: season } = await supabase
-      .from("seasons")
-      .select("id")
-      .eq("status", "active")
-      .single();
+    // Get active season (may not exist yet)
+    let season = null;
+    try {
+      const { data } = await supabase
+        .from("seasons")
+        .select("id")
+        .eq("status", "active")
+        .single();
+      season = data;
+    } catch (seasonErr) {
+      console.error("Season lookup error (non-fatal):", seasonErr);
+    }
 
     // Insert submission record
     const insertData: Record<string, any> = {
@@ -95,28 +102,56 @@ export async function POST(request: NextRequest) {
       episode_id: episode_id || null,
     };
 
-    // Add user_id for user→submission linking
-    if (session?.user?.id) insertData.user_id = session.user.id;
+    // Try insert with user_id first, fall back without it if column doesn't exist
+    let submission = null;
+    let insertError = null;
 
-    const { data: submission, error: insertError } = await supabase
-      .from("submissions")
-      .insert(insertData)
-      .select()
-      .single();
+    if (session?.user?.id) {
+      const withUser = { ...insertData, user_id: session.user.id };
+      const result = await supabase
+        .from("submissions")
+        .insert(withUser)
+        .select()
+        .single();
+      submission = result.data;
+      insertError = result.error;
+
+      // If column doesn't exist, retry without user_id
+      if (insertError && insertError.message?.includes("user_id")) {
+        console.warn("user_id column missing, retrying without it");
+        const fallback = await supabase
+          .from("submissions")
+          .insert(insertData)
+          .select()
+          .single();
+        submission = fallback.data;
+        insertError = fallback.error;
+      }
+    } else {
+      const result = await supabase
+        .from("submissions")
+        .insert(insertData)
+        .select()
+        .single();
+      submission = result.data;
+      insertError = result.error;
+    }
 
     if (insertError) {
       console.error("Insert error:", JSON.stringify(insertError, null, 2));
+      console.error("Insert data was:", JSON.stringify(insertData, null, 2));
       return NextResponse.json(
-        { error: "Failed to save submission" },
+        { error: `Failed to save submission: ${insertError.message}` },
         { status: 500 }
       );
     }
 
     return NextResponse.json(submission, { status: 201 });
   } catch (err: any) {
-    console.error("Submission error:", err);
+    console.error("Submission error:", err?.message || err);
+    console.error("Full error:", JSON.stringify(err, null, 2));
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Internal server error: ${err?.message || "unknown"}` },
       { status: 500 }
     );
   }
