@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 // GET /api/episodes/current — get the current open episode for submissions
 export async function GET() {
   try {
-    const supabase = createServiceClient();
+    const supabase = await createClient();
 
     // Get the most recent episode where submissions are open
     const { data, error } = await supabase
