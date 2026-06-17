@@ -66,7 +66,12 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
-      router.push("/");
+
+      // Redirect to user's profile page
+      const { data: { user } } = await supabase.auth.getUser();
+      const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "";
+      const slug = displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      router.push(slug ? `/${slug}` : "/");
     } catch (err: any) {
       setServerError(err.message || "Invalid email or password.");
     } finally {

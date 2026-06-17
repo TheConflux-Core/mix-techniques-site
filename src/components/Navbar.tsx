@@ -32,14 +32,14 @@ export default function Navbar() {
 
           {!loading && (
             <>
+              <Link
+                href="/vote"
+                className="nav-link font-[family-name:var(--font-mono)] text-sm text-[#F0E6D3]/50 hover:text-[#D4A843] transition-colors tracking-wider"
+              >
+                Vote
+              </Link>
               {user ? (
                 <>
-                  <Link
-                    href="/vote"
-                    className="nav-link font-[family-name:var(--font-mono)] text-sm text-[#F0E6D3]/50 hover:text-[#D4A843] transition-colors tracking-wider"
-                  >
-                    Vote
-                  </Link>
                   <Link
                     href={`/${slugify(user.user_metadata?.display_name || user.email?.split("@")[0] || "")}`}
                     className="flex items-center gap-2 nav-link"
