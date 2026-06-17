@@ -5,9 +5,9 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Verify user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Validate session with Supabase Auth (refreshes stale JWT)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
     let submission = null;
     let insertError = null;
 
-    if (session?.user?.id) {
-      const withUser = { ...insertData, user_id: session.user.id };
+    if (user?.id) {
+      const withUser = { ...insertData, user_id: user.id };
       const result = await supabase
         .from("submissions")
         .insert(withUser)
