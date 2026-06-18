@@ -312,20 +312,37 @@ export default function VotePage() {
   );
 
   // ─── State: No Episode ─────────────────────────────────────────
-  if (voteState === "no_episode") {
+  // ─── (rendered below as overlay on faders) ─────────────────────
+
+  // ─── State: Ready (upcoming) ───────────────────────────────────
+  // ─── (rendered below as overlay on faders) ─────────────────────
+
+  // ─── Not-live overlay card ─────────────────────────────────────
+  const NotLiveOverlay = () => {
+    if (voteState === "live") return null;
+
     return (
-      <div className="min-h-screen relative overflow-x-hidden flex flex-col items-center justify-center">
-        <div className="w-full max-w-[600px] px-5 py-6">
-          <PageHeader />
-          <Card className="text-center">
+      <div
+        className="relative z-20 rounded-lg px-6 py-8 mb-[-180px] mt-6"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(26,15,10,0.92), rgba(26,15,10,0.88))",
+          border: "1px solid rgba(212,168,67,0.12)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        {/* No Episode */}
+        {voteState === "no_episode" && (
+          <div className="text-center">
             <div
-              className="font-[family-name:var(--font-display)] text-[clamp(28px,5vw,42px)] font-black tracking-[4px] uppercase"
+              className="font-[family-name:var(--font-display)] text-[clamp(24px,4vw,36px)] font-black tracking-[4px] uppercase"
               style={{ color: "var(--color-studio-gold)" }}
             >
               Same Place
             </div>
             <div
-              className="font-[family-name:var(--font-display)] text-[clamp(28px,5vw,42px)] font-black tracking-[4px] uppercase -mt-1"
+              className="font-[family-name:var(--font-display)] text-[clamp(24px,4vw,36px)] font-black tracking-[4px] uppercase -mt-1"
               style={{ color: "var(--color-cream-linen)" }}
             >
               — Same Time
@@ -346,46 +363,33 @@ export default function VotePage() {
             />
             <p
               className="text-xs tracking-[2px] mt-4"
-              style={{ color: "rgba(240,230,211,0.4)" }}
+              style={{ color: "rgba(240,230,211,0.5)" }}
             >
-              In the meantime, submit your track for a chance to be featured.
+              Voting opens when the show goes live. Submit your track in the
+              meantime!
             </p>
             <SubmitLink />
-          </Card>
-        </div>
-      </div>
-    );
-  }
+          </div>
+        )}
 
-  // ─── State: Ready (upcoming) ───────────────────────────────────
-  if (voteState === "ready" && episode) {
-    return (
-      <div className="min-h-screen relative overflow-x-hidden flex flex-col items-center justify-center">
-        <div className="w-full max-w-[600px] px-5 py-6">
-          <PageHeader />
-          <Card className="text-center">
+        {/* Ready / Upcoming */}
+        {voteState === "ready" && episode && (
+          <div className="text-center">
             <div
               className="text-[9px] tracking-[4px] uppercase mb-2"
-              style={{ color: "rgba(212,168,67,0.4)" }}
+              style={{ color: "rgba(76,175,80,0.6)" }}
             >
-              Upcoming Episode
+              🔴 Coming Soon
             </div>
             <div
-              className="font-[family-name:var(--font-display)] text-[clamp(22px,3.5vw,32px)] font-bold"
+              className="font-[family-name:var(--font-display)] text-[clamp(20px,3vw,28px)] font-bold"
               style={{ color: "var(--color-cream-linen)" }}
             >
               {episode.title || `Episode ${episode.episode_number}`}
             </div>
-            <div
-              className="text-[11px] tracking-[2px] mt-1"
-              style={{ color: "rgba(212,168,67,0.5)" }}
-            >
-              Episode {episode.episode_number}
-            </div>
-
             {episode.air_date && (
               <div
-                className="mt-4 px-4 py-2.5 rounded inline-block"
+                className="mt-3 px-4 py-2 rounded inline-block"
                 style={{
                   background: "rgba(26,15,10,0.5)",
                   border: "1px solid rgba(212,168,67,0.15)",
@@ -405,19 +409,16 @@ export default function VotePage() {
                 </div>
               </div>
             )}
-
             <p
-              className="text-xs tracking-[2px] mt-4"
-              style={{ color: "rgba(240,230,211,0.5)" }}
+              className="text-xs tracking-[2px] mt-3"
+              style={{ color: "rgba(212,168,67,0.5)" }}
             >
-              The submission window opens 2 hours prior to the show&apos;s start
-              time.
+              Voting opens when the show goes live. Get ready!
             </p>
-
             {episode.guest_judges && episode.guest_judges.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-3">
                 <div
-                  className="text-[8px] tracking-[3px] uppercase mb-2"
+                  className="text-[8px] tracking-[3px] uppercase mb-1.5"
                   style={{ color: "rgba(212,168,67,0.35)" }}
                 >
                   Guest Judges
@@ -439,67 +440,95 @@ export default function VotePage() {
                 </div>
               </div>
             )}
-
             <SubmitLink />
+          </div>
+        )}
+
+        {/* Post / Published */}
+        {voteState === "post" && episode && (
+          <div className="text-center">
+            <div
+              className="text-[9px] tracking-[4px] uppercase mb-2"
+              style={{ color: "rgba(212,168,67,0.4)" }}
+            >
+              Episode {episode.episode_number} —{" "}
+              {episode.status === "published"
+                ? "Published"
+                : "Post-Production"}
+            </div>
+            <div
+              className="font-[family-name:var(--font-display)] text-[clamp(20px,3vw,28px)] font-bold"
+              style={{ color: "var(--color-cream-linen)" }}
+            >
+              {episode.title || `Episode ${episode.episode_number}`}
+            </div>
+            <p
+              className="text-sm tracking-[3px] uppercase mt-3"
+              style={{ color: "rgba(212,168,67,0.5)" }}
+            >
+              That&apos;s a wrap! Check back soon for the next episode.
+            </p>
+            <SubmitLink />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ─── Live: not logged in ───────────────────────────────────────
+  if (voteState === "live" && !user) {
+    return (
+      <div className="min-h-screen relative overflow-x-hidden flex flex-col items-center justify-center">
+        <div className="w-full max-w-[600px] px-5 py-6">
+          <PageHeader />
+          <Card className="text-center">
+            <div
+              className="text-[9px] tracking-[4px] uppercase mb-2"
+              style={{ color: "rgba(76,175,80,0.6)" }}
+            >
+              🔴 We&apos;re Live
+            </div>
+            <div
+              className="font-[family-name:var(--font-display)] text-[clamp(22px,3.5vw,30px)] font-bold"
+              style={{ color: "var(--color-cream-linen)" }}
+            >
+              {episode?.title || "Mix Techniques is LIVE"}
+            </div>
+            <p
+              className="text-xs tracking-[2px] mt-3"
+              style={{ color: "rgba(240,230,211,0.5)" }}
+            >
+              The voting window is open while each song is playing… please
+              tune in!
+            </p>
+            <StreamLinks />
+            <div className="mt-6">
+              <a
+                href="/login"
+                className="inline-block px-6 py-2.5 rounded text-xs tracking-[3px] uppercase font-bold transition-all duration-200 hover:scale-105"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-studio-gold), var(--color-amber-glow))",
+                  color: "var(--color-obsidian)",
+                  boxShadow: "0 2px 12px rgba(212,168,67,0.25)",
+                }}
+              >
+                Log In to Vote
+              </a>
+            </div>
           </Card>
         </div>
       </div>
     );
   }
 
-  // ─── State: Live (full voting experience) ──────────────────────
-  if (voteState === "live") {
-    // Require login for voting
-    if (!user) {
-      return (
-        <div className="min-h-screen relative overflow-x-hidden flex flex-col items-center justify-center">
-          <div className="w-full max-w-[600px] px-5 py-6">
-            <PageHeader />
-            <Card className="text-center">
-              <div
-                className="text-[9px] tracking-[4px] uppercase mb-2"
-                style={{ color: "rgba(76,175,80,0.6)" }}
-              >
-                🔴 We&apos;re Live
-              </div>
-              <div
-                className="font-[family-name:var(--font-display)] text-[clamp(22px,3.5vw,30px)] font-bold"
-                style={{ color: "var(--color-cream-linen)" }}
-              >
-                {episode?.title || "Mix Techniques is LIVE"}
-              </div>
-              <p
-                className="text-xs tracking-[2px] mt-3"
-                style={{ color: "rgba(240,230,211,0.5)" }}
-              >
-                The voting window is open while each song is playing… please
-                tune in!
-              </p>
-              <StreamLinks />
-              <div className="mt-6">
-                <a
-                  href="/login"
-                  className="inline-block px-6 py-2.5 rounded text-xs tracking-[3px] uppercase font-bold transition-all duration-200 hover:scale-105"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--color-studio-gold), var(--color-amber-glow))",
-                    color: "var(--color-obsidian)",
-                    boxShadow: "0 2px 12px rgba(212,168,67,0.25)",
-                  }}
-                >
-                  Log In to Vote
-                </a>
-              </div>
-            </Card>
-          </div>
-        </div>
-      );
-    }
+  // ─── Main page (all states) ────────────────────────────────────
+  const isLive = voteState === "live";
 
-    // Logged-in live voting experience
-    return (
-      <div className="min-h-screen relative overflow-x-hidden overflow-y-auto flex flex-col items-center">
-        {/* WS Status indicator */}
+  return (
+    <div className="min-h-screen relative overflow-x-hidden overflow-y-auto flex flex-col items-center">
+      {/* WS Status indicator (only when live) */}
+      {isLive && (
         <div className="fixed top-3 right-4 z-[100] flex items-center gap-1.5 text-[9px] tracking-[2px] uppercase">
           <div
             className="w-1.5 h-1.5 rounded-full transition-all duration-300"
@@ -520,98 +549,72 @@ export default function VotePage() {
             {connected ? "LIVE" : "OFFLINE"}
           </span>
         </div>
+      )}
 
-        {/* Page container */}
-        <div className="w-full max-w-[1100px] px-5 py-6 pb-10 relative z-10 flex-1 flex flex-col">
-          {/* Header */}
-          <div className="text-center mb-7">
-            <h1
-              className="font-[family-name:var(--font-display)] font-black text-[clamp(24px,4vw,36px)] tracking-[6px] uppercase"
-              style={{ color: "var(--color-cream-linen)" }}
-            >
-              MIX{" "}
-              <span style={{ color: "var(--color-studio-gold)" }}>
-                TECHNIQUES
-              </span>
-            </h1>
-            <p
-              className="text-[clamp(10px,1.5vw,13px)] tracking-[4px] uppercase mt-1"
-              style={{ color: "rgba(212,168,67,0.45)" }}
-            >
-              Score the mix in real-time
-            </p>
-            <div
-              className="w-full h-px mt-4"
-              style={{
-                background:
-                  "linear-gradient(90deg, transparent, var(--color-studio-gold), transparent)",
-                opacity: 0.25,
-              }}
-            />
-          </div>
+      {/* Page container */}
+      <div className="w-full max-w-[1100px] px-5 py-6 pb-10 relative z-10 flex-1 flex flex-col">
+        {/* Header */}
+        <div className="text-center mb-7">
+          <h1
+            className="font-[family-name:var(--font-display)] font-black text-[clamp(24px,4vw,36px)] tracking-[6px] uppercase"
+            style={{ color: "var(--color-cream-linen)" }}
+          >
+            MIX{" "}
+            <span style={{ color: "var(--color-studio-gold)" }}>
+              TECHNIQUES
+            </span>
+          </h1>
+          <p
+            className="text-[clamp(10px,1.5vw,13px)] tracking-[4px] uppercase mt-1"
+            style={{ color: "rgba(212,168,67,0.45)" }}
+          >
+            {isLive ? "Score the mix in real-time" : "Voting console"}
+          </p>
+          <div
+            className="w-full h-px mt-4"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, var(--color-studio-gold), transparent)",
+              opacity: 0.25,
+            }}
+          />
+        </div>
 
-          {/* Stream links */}
-          <StreamLinks />
+        {/* Stream links */}
+        <StreamLinks />
 
-          {/* Now Playing */}
-          <NowPlaying contestant={contestant} />
+        {/* Now Playing (only when live) */}
+        {isLive && <NowPlaying contestant={contestant} />}
 
-          {/* Fader Console */}
+        {/* Fader Console — always visible */}
+        <div className="relative">
           <FaderConsole
             onScoresChange={handleScoresChange}
             onSubmit={handleSubmit}
-            disabled={!connected || !contestant}
+            disabled={!isLive || !connected || !contestant}
             submitted={submitted}
           />
 
-          {/* Leaderboard */}
-          <Leaderboard entries={leaderboard} />
+          {/* Disabled overlay when not live */}
+          {!isLive && (
+            <div
+              className="absolute inset-0 z-30 rounded-lg flex flex-col items-center justify-center pointer-events-auto"
+              style={{
+                background: "rgba(26,15,10,0.6)",
+                backdropFilter: "blur(2px)",
+              }}
+            />
+          )}
         </div>
 
-        {toastEl}
+        {/* State overlay card (sits above faders visually) */}
+        <NotLiveOverlay />
+
+        {/* Leaderboard (only when live) */}
+        {isLive && <Leaderboard entries={leaderboard} />}
       </div>
-    );
-  }
 
-  // ─── State: Post-production / Published ────────────────────────
-  if ((voteState === "post") && episode) {
-    return (
-      <div className="min-h-screen relative overflow-x-hidden flex flex-col items-center justify-center">
-        <div className="w-full max-w-[600px] px-5 py-6">
-          <PageHeader />
-          <Card className="text-center">
-            <div
-              className="text-[9px] tracking-[4px] uppercase mb-2"
-              style={{ color: "rgba(212,168,67,0.4)" }}
-            >
-              Episode {episode.episode_number} —{" "}
-              {episode.status === "published" ? "Published" : "Post-Production"}
-            </div>
-            <div
-              className="font-[family-name:var(--font-display)] text-[clamp(22px,3.5vw,30px)] font-bold"
-              style={{ color: "var(--color-cream-linen)" }}
-            >
-              {episode.title || `Episode ${episode.episode_number}`}
-            </div>
-            <p
-              className="text-sm tracking-[3px] uppercase mt-4"
-              style={{ color: "rgba(212,168,67,0.5)" }}
-            >
-              That&apos;s a wrap! Check back soon for the next episode.
-            </p>
-
-            {/* Final leaderboard placeholder */}
-            <div className="mt-5">
-              <Leaderboard entries={[]} />
-            </div>
-
-            <SubmitLink />
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Fallback — shouldn't reach here
-  return null;
+      {toastEl}
+    </div>
+  );
 }

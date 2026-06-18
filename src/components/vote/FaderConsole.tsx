@@ -68,7 +68,9 @@ export default function FaderConsole({
 
   return (
     <div
-      className="relative rounded-lg px-4 pt-6 pb-7 mb-5 overflow-hidden"
+      className={`relative rounded-lg px-4 pt-6 pb-7 mb-5 overflow-hidden transition-opacity duration-300 ${
+        disabled ? "opacity-45" : "opacity-100"
+      }`}
       style={{
         background:
           "linear-gradient(180deg, rgba(42,24,16,0.6), rgba(26,15,10,0.7))",

@@ -121,7 +121,11 @@ export default function Fader({
   }
 
   return (
-    <div className="flex flex-col items-center w-[clamp(70px,14vw,130px)] select-none">
+    <div
+      className={`flex flex-col items-center w-[clamp(70px,14vw,130px)] select-none ${
+        disabled ? "pointer-events-none" : ""
+      }`}
+    >
       {/* Label */}
       <div
         className="text-[clamp(8px,1.2vw,10px)] tracking-[2px] uppercase text-center whitespace-nowrap mb-2.5"
