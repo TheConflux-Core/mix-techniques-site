@@ -27,11 +27,13 @@ export interface Episode {
   season_id: number;
   episode_number: number;
   title: string | null;
+  description: string | null;
   air_date: string | null;
   status: string;
   submissions_open: boolean;
   youtube_url: string | null;
   podcast_url: string | null;
+  guest_judges: string[] | null;
   created_at: string;
 }
 

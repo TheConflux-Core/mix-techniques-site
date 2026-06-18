@@ -30,6 +30,8 @@ export function useVoteSocket(serverUrl: string) {
 
   const connect = useCallback(() => {
     if (wsRef.current) return;
+    // Don't connect if no URL provided (e.g. episode not live)
+    if (!serverUrl) return;
 
     let ws: WebSocket;
     try {
