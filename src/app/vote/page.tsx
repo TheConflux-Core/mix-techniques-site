@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useVoteSocket } from "@/lib/useVoteSocket";
+import { createClient } from "@/lib/supabase/client";
 import FaderConsole from "@/components/vote/FaderConsole";
 import NowPlaying from "@/components/vote/NowPlaying";
 import Leaderboard from "@/components/vote/Leaderboard";
@@ -80,6 +81,60 @@ export default function VotePage() {
     fetchEpisode();
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  // Subscribe to episode status changes via Supabase Realtime
+  useEffect(() => {
+    const supabase = createClient();
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const channel = supabase
+      .channel("episode-status")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "episodes" },
+        (payload) => {
+          const updated = payload.new as EpisodeData;
+          setEpisode((prev) => {
+            if (!prev || prev.id === updated.id) {
+              setVoteState(getVoteState(updated.status));
+              return updated;
+            }
+            if (updated.status === "live") {
+              setVoteState(getVoteState(updated.status));
+              return updated;
+            }
+            return prev;
+          });
+          // Stop polling once we get a realtime event
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        }
+      )
+      .subscribe((status) => {
+        // If subscription fails, fall back to polling
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          pollTimer = setInterval(async () => {
+            try {
+              const res = await fetch("/api/episodes/active");
+              const data = await res.json();
+              if (data.episode) {
+                setEpisode((prev) => {
+                  if (!prev || prev.status !== data.episode.status) {
+                    setVoteState(getVoteState(data.episode.status));
+                    return data.episode;
+                  }
+                  return prev;
+                });
+              }
+            } catch { /* silent */ }
+          }, 15000);
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (pollTimer) clearInterval(pollTimer);
     };
   }, []);
 
