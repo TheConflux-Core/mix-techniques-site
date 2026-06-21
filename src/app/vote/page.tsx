@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useVoteSocket } from "@/lib/useVoteSocket";
@@ -49,11 +49,8 @@ export default function VotePage() {
   const [currentScores, setCurrentScores] = useState<Record<string, number>>(
     {}
   );
-  const [currentAvg, setCurrentAvg] = useState(5);
-  const [submitted, setSubmitted] = useState(false);
-  const [votedContestants, setVotedContestants] = useState<Set<string>>(
-    new Set()
-  );
+  const [currentAvg, setCurrentAvg] = useState(7);
+  const lastSentRef = useRef(0);
   const [toast, setToast] = useState<{
     text: string;
     type: "ok" | "err";
@@ -138,68 +135,39 @@ export default function VotePage() {
     };
   }, []);
 
-  // Reset submitted state when contestant changes
-  useEffect(() => {
-    if (contestant?.name) {
-      setSubmitted(votedContestants.has(contestant.name));
-    } else {
-      setSubmitted(false);
-    }
-  }, [contestant?.name, votedContestants]);
-
   // Show toast
   const showToast = useCallback((text: string, type: "ok" | "err") => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 2500);
   }, []);
 
+  // Real-time vote: send on every fader change (throttled to 100ms)
   const handleScoresChange = useCallback(
     (_scores: Record<string, number>, avg: number) => {
       setCurrentScores(_scores);
       setCurrentAvg(avg);
+
+      if (!connected || !contestant?.name) return;
+
+      const now = Date.now();
+      if (now - lastSentRef.current < 100) return;
+      lastSentRef.current = now;
+
+      const displayName =
+        user?.user_metadata?.display_name ||
+        user?.email?.split("@")[0] ||
+        "Anonymous";
+
+      sendMessage("viewer-vote", {
+        viewer: `user_${user?.id}`,
+        displayName,
+        contestant: contestant.name,
+        metrics: _scores,
+        total: +avg.toFixed(2),
+      });
     },
-    []
+    [connected, contestant, user, sendMessage]
   );
-
-  const handleSubmit = useCallback(() => {
-    if (!connected) {
-      showToast("Not connected to server", "err");
-      return;
-    }
-    if (!contestant?.name) {
-      showToast("No active contestant", "err");
-      return;
-    }
-
-    const displayName =
-      user?.user_metadata?.display_name ||
-      user?.email?.split("@")[0] ||
-      "Anonymous";
-
-    const ok = sendMessage("viewer-vote", {
-      viewer: `user_${user?.id}`,
-      displayName,
-      contestant: contestant.name,
-      metrics: currentScores,
-      total: +currentAvg.toFixed(2),
-    });
-
-    if (ok) {
-      setSubmitted(true);
-      setVotedContestants((prev) => new Set(prev).add(contestant.name));
-      showToast("Score submitted!", "ok");
-    } else {
-      showToast("Failed to send vote", "err");
-    }
-  }, [
-    connected,
-    contestant,
-    user,
-    sendMessage,
-    currentScores,
-    currentAvg,
-    showToast,
-  ]);
 
   // ─── Toast UI ──────────────────────────────────────────────────
   const toastEl = toast ? (
@@ -645,9 +613,7 @@ export default function VotePage() {
         <div className="relative mt-8">
           <FaderConsole
             onScoresChange={handleScoresChange}
-            onSubmit={handleSubmit}
             disabled={!isLive || !connected || !votingOpen || !contestant}
-            submitted={submitted}
           />
 
           {/* Not-live overlay (episode states) */}

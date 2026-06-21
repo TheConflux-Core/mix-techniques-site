@@ -5,9 +5,7 @@ import Fader from "./Fader";
 
 interface FaderConsoleProps {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
-  onSubmit: () => void;
   disabled: boolean;
-  submitted: boolean;
 }
 
 const METRICS = [
@@ -22,10 +20,11 @@ const DEFAULT_SCORE = 7;
 
 export default function FaderConsole({
   onScoresChange,
-  onSubmit,
   disabled,
-  submitted,
-}: FaderConsoleProps) {
+}: {
+  onScoresChange: (scores: Record<string, number>, avg: number) => void;
+  disabled: boolean;
+}) {
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
     METRICS.forEach((m) => (initial[m.key] = DEFAULT_SCORE));
@@ -113,7 +112,7 @@ export default function FaderConsole({
       {/* Spacer */}
       <div className="h-5" />
 
-      {/* Submit row */}
+      {/* Average display */}
       <div className="flex items-center justify-center gap-6 relative z-10 flex-wrap">
         <div className="flex items-baseline gap-2">
           <span
@@ -129,40 +128,7 @@ export default function FaderConsole({
             {avg.toFixed(1)}
           </span>
         </div>
-
-        <button
-          onClick={onSubmit}
-          disabled={disabled || submitted}
-          className="font-[family-name:var(--font-mono)] text-[11px] tracking-[3px] uppercase px-8 py-3 rounded border whitespace-nowrap transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{
-            borderColor: submitted
-              ? "rgba(76,175,80,0.4)"
-              : "rgba(212,168,67,0.3)",
-            background: submitted
-              ? "rgba(76,175,80,0.1)"
-              : "linear-gradient(180deg, rgba(212,168,67,0.15), rgba(212,168,67,0.05))",
-            color: submitted ? "#4CAF50" : "var(--color-studio-gold)",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-          }}
-        >
-          {submitted ? "Submitted" : "Submit Scores"}
-        </button>
       </div>
-
-      {/* Submitted overlay */}
-      {submitted && (
-        <div
-          className="absolute inset-0 rounded-lg z-10 flex flex-col items-center justify-center gap-2"
-          style={{ background: "rgba(26,15,10,0.7)" }}
-        >
-          <div className="text-4xl text-[#4CAF50]">✓</div>
-          <div
-            className="text-[11px] tracking-[3px] uppercase text-[#4CAF50]"
-          >
-            Scores Submitted
-          </div>
-        </div>
-      )}
     </div>
   );
 }
