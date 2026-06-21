@@ -24,6 +24,7 @@ export function useVoteSocket(serverUrl: string) {
   const [connected, setConnected] = useState(false);
   const [contestant, setContestant] = useState<Contestant | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [votingOpen, setVotingOpen] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
@@ -90,6 +91,7 @@ export function useVoteSocket(serverUrl: string) {
         if (!d) break;
         if (d.contestant) applyContestant(d.contestant as unknown as Contestant);
         if (d.leaderboard) applyLeaderboard(d.leaderboard);
+        if (d.votingOpen !== undefined) setVotingOpen(!!d.votingOpen);
         break;
       }
       case "contestant-update":
@@ -97,9 +99,22 @@ export function useVoteSocket(serverUrl: string) {
         break;
       case "next-contestant":
         setContestant(null);
+        setVotingOpen(false);
         break;
       case "leaderboard-update":
         applyLeaderboard(msg.data);
+        break;
+      case "voting-open":
+        setVotingOpen(true);
+        break;
+      case "voting-closed":
+        setVotingOpen(false);
+        break;
+      case "play-track":
+        setVotingOpen(true);
+        break;
+      case "pause-track":
+        setVotingOpen(false);
         break;
       case "viewer-vote-ack":
         // handled by caller
@@ -156,5 +171,5 @@ export function useVoteSocket(serverUrl: string) {
     };
   }, [connect]);
 
-  return { connected, contestant, leaderboard, sendMessage };
+  return { connected, contestant, leaderboard, votingOpen, sendMessage };
 }

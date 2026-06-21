@@ -42,7 +42,7 @@ export default function VotePage() {
   const [voteState, setVoteState] = useState<VoteState>("loading");
 
   // WebSocket only connects when live
-  const { connected, contestant, leaderboard, sendMessage } =
+  const { connected, contestant, leaderboard, votingOpen, sendMessage } =
     useVoteSocket(voteState === "live" ? WS_URL : "");
 
   const [currentScores, setCurrentScores] = useState<Record<string, number>>(
@@ -317,19 +317,19 @@ export default function VotePage() {
   // ─── State: Ready (upcoming) ───────────────────────────────────
   // ─── (rendered below as overlay on faders) ─────────────────────
 
-  // ─── Not-live overlay card ─────────────────────────────────────
+  // ─── Not-live overlay (covers fader console) ────────────────────
   const NotLiveOverlay = () => {
     if (voteState === "live") return null;
 
     return (
       <div
-        className="relative z-20 rounded-lg px-6 py-8 mb-[-180px] mt-6"
+        className="absolute inset-0 z-30 rounded-lg flex flex-col items-center justify-center px-6 py-8"
         style={{
           background:
-            "linear-gradient(180deg, rgba(26,15,10,0.92), rgba(26,15,10,0.88))",
+            "linear-gradient(180deg, rgba(26,15,10,0.94), rgba(26,15,10,0.92))",
           border: "1px solid rgba(212,168,67,0.12)",
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-          backdropFilter: "blur(8px)",
+          backdropFilter: "blur(4px)",
         }}
       >
         {/* No Episode */}
@@ -362,7 +362,7 @@ export default function VotePage() {
               }}
             />
             <p
-              className="text-xs tracking-[2px] mt-4"
+              className="text-xs tracking-[2px] mt-4 max-w-[320px]"
               style={{ color: "rgba(240,230,211,0.5)" }}
             >
               Voting opens when the show goes live. Submit your track in the
@@ -586,29 +586,53 @@ export default function VotePage() {
         {/* Now Playing (only when live) */}
         {isLive && <NowPlaying contestant={contestant} />}
 
-        {/* Fader Console — always visible */}
-        <div className="relative">
+        {/* Fader Console + Inactive Overlay — stacked */}
+        <div className="relative mt-8">
           <FaderConsole
             onScoresChange={handleScoresChange}
             onSubmit={handleSubmit}
-            disabled={!isLive || !connected || !contestant}
+            disabled={!isLive || !connected || !votingOpen || !contestant}
             submitted={submitted}
           />
 
-          {/* Disabled overlay when not live */}
-          {!isLive && (
+          {/* Not-live overlay (episode states) */}
+          {!isLive && <NotLiveOverlay />}
+
+          {/* Live but voting closed — between contestants */}
+          {isLive && !votingOpen && (
             <div
-              className="absolute inset-0 z-30 rounded-lg flex flex-col items-center justify-center pointer-events-auto"
+              className="absolute inset-0 z-30 rounded-lg flex flex-col items-center justify-center px-6 py-8"
               style={{
-                background: "rgba(26,15,10,0.6)",
-                backdropFilter: "blur(2px)",
+                background:
+                  "linear-gradient(180deg, rgba(26,15,10,0.92), rgba(26,15,10,0.88))",
+                border: "1px solid rgba(212,168,67,0.12)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                backdropFilter: "blur(4px)",
               }}
-            />
+            >
+              <div className="text-center">
+                <div
+                  className="text-[9px] tracking-[4px] uppercase mb-3"
+                  style={{ color: "rgba(76,175,80,0.6)" }}
+                >
+                  🔴 Live
+                </div>
+                <div
+                  className="font-[family-name:var(--font-display)] text-[clamp(20px,3vw,28px)] font-bold"
+                  style={{ color: "var(--color-cream-linen)" }}
+                >
+                  Waiting for Next Contestant
+                </div>
+                <p
+                  className="text-xs tracking-[2px] mt-3"
+                  style={{ color: "rgba(212,168,67,0.5)" }}
+                >
+                  Voting opens when the song starts playing.
+                </p>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* State overlay card (sits above faders visually) */}
-        <NotLiveOverlay />
 
         {/* Leaderboard (only when live) */}
         {isLive && <Leaderboard entries={leaderboard} />}
