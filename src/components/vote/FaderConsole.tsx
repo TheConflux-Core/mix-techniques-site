@@ -18,7 +18,7 @@ const METRICS = [
   { key: "image", label: "IMAGE" },
 ];
 
-const DEFAULT_SCORE = 5;
+const DEFAULT_SCORE = 7;
 
 export default function FaderConsole({
   onScoresChange,

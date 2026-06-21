@@ -15,6 +15,12 @@ export interface LeaderboardEntry {
   votes: number;
 }
 
+export interface ViewerScores {
+  metrics: Record<string, number>;
+  total: number;
+  votes: number;
+}
+
 export interface VoteMessage {
   type: string;
   data?: Record<string, unknown>;
@@ -25,6 +31,11 @@ export function useVoteSocket(serverUrl: string) {
   const [contestant, setContestant] = useState<Contestant | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [votingOpen, setVotingOpen] = useState(false);
+  const [viewerScores, setViewerScores] = useState<ViewerScores>({
+    metrics: {},
+    total: 0,
+    votes: 0,
+  });
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
@@ -92,6 +103,13 @@ export function useVoteSocket(serverUrl: string) {
         if (d.contestant) applyContestant(d.contestant as unknown as Contestant);
         if (d.leaderboard) applyLeaderboard(d.leaderboard);
         if (d.votingOpen !== undefined) setVotingOpen(!!d.votingOpen);
+        if (d.viewerMetrics || d.viewerVotes !== undefined) {
+          setViewerScores({
+            metrics: (d.viewerMetrics as Record<string, number>) || {},
+            total: (d.viewerTotal as number) || 0,
+            votes: (d.viewerVotes as number) || 0,
+          });
+        }
         break;
       }
       case "contestant-update":
@@ -100,10 +118,22 @@ export function useVoteSocket(serverUrl: string) {
       case "next-contestant":
         setContestant(null);
         setVotingOpen(false);
+        setViewerScores({ metrics: {}, total: 0, votes: 0 });
         break;
       case "leaderboard-update":
         applyLeaderboard(msg.data);
         break;
+      case "viewer-score-update": {
+        const d = msg.data as Record<string, unknown> | undefined;
+        if (d) {
+          setViewerScores({
+            metrics: (d.metrics as Record<string, number>) || {},
+            total: (d.total as number) || 0,
+            votes: (d.votes as number) || 0,
+          });
+        }
+        break;
+      }
       case "voting-open":
         setVotingOpen(true);
         break;
@@ -171,5 +201,5 @@ export function useVoteSocket(serverUrl: string) {
     };
   }, [connect]);
 
-  return { connected, contestant, leaderboard, votingOpen, sendMessage };
+  return { connected, contestant, leaderboard, votingOpen, viewerScores, sendMessage };
 }
