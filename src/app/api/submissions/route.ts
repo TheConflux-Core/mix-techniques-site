@@ -98,13 +98,34 @@ export async function POST(request: NextRequest) {
     };
 
     // Add user_id for user→submission linking
+    // Gracefully skip if the column doesn't exist in the DB
     if (session?.user?.id) insertData.user_id = session.user.id;
 
-    const { data: submission, error: insertError } = await db
+    let submission;
+    let insertError;
+
+    const result = await db
       .from("submissions")
       .insert(insertData)
       .select()
       .single();
+
+    submission = result.data;
+    insertError = result.error;
+
+    // If insert failed and we included user_id, retry without it
+    // (handles case where user_id column migration hasn't been applied)
+    if (insertError && insertData.user_id) {
+      console.warn("Insert with user_id failed, retrying without it:", insertError.message);
+      const { user_id, ...retryData } = insertData;
+      const retry = await db
+        .from("submissions")
+        .insert(retryData)
+        .select()
+        .single();
+      submission = retry.data;
+      insertError = retry.error;
+    }
 
     if (insertError) {
       console.error("Insert error:", JSON.stringify(insertError, null, 2));
