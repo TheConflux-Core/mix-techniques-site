@@ -5,6 +5,13 @@ import { createServiceClient } from "@/lib/supabase/service";
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+
+    // Verify service role key is configured
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY is not set");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
     const db = createServiceClient();
 
     // Verify user is authenticated
@@ -39,7 +46,8 @@ export async function POST(request: NextRequest) {
       .createSignedUrl(track_url, 60);
 
     if (storageCheck) {
-      return NextResponse.json({ error: "Track file not found in storage" }, { status: 400 });
+      console.error("Storage check failed:", storageCheck.message);
+      return NextResponse.json({ error: `Track file not found in storage: ${storageCheck.message}` }, { status: 400 });
     }
 
     // If episode_id provided, verify episode is accepting submissions
@@ -130,16 +138,16 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error("Insert error:", JSON.stringify(insertError, null, 2));
       return NextResponse.json(
-        { error: "Failed to save submission" },
+        { error: `Failed to save submission: ${insertError.message}` },
         { status: 500 }
       );
     }
 
     return NextResponse.json(submission, { status: 201 });
   } catch (err: any) {
-    console.error("Submission error:", err);
+    console.error("Submission error:", err?.message || err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: err?.message || "Internal server error" },
       { status: 500 }
     );
   }
