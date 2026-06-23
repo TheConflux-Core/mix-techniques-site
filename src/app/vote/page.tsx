@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { useVoteSocket } from "@/lib/useVoteSocket";
 import { createClient } from "@/lib/supabase/client";
 import FaderConsole from "@/components/vote/FaderConsole";
 import NowPlaying from "@/components/vote/NowPlaying";
 import Leaderboard from "@/components/vote/Leaderboard";
+import MeterBridge from "@/components/vote/MeterBridge";
+import BooleanVotes from "@/components/vote/BooleanVotes";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8765";
 
@@ -36,15 +37,34 @@ function getVoteState(status: string | null): Exclude<VoteState, "loading"> {
 
 export default function VotePage() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
 
   const [episode, setEpisode] = useState<EpisodeData | null>(null);
   const [fetching, setFetching] = useState(true);
   const [voteState, setVoteState] = useState<VoteState>("loading");
 
+  // Viewer ID (persisted in localStorage like standalone)
+  const [viewerId] = useState(() => {
+    if (typeof window === "undefined") return "v_server";
+    let vid = localStorage.getItem("mt_vid");
+    if (!vid) {
+      vid = "v_" + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem("mt_vid", vid);
+    }
+    return vid;
+  });
+
   // WebSocket only connects when live
-  const { connected, contestant, leaderboard, votingOpen, sendMessage } =
-    useVoteSocket(voteState === "live" ? WS_URL : "");
+  const {
+    connected,
+    contestant,
+    leaderboard,
+    votingOpen,
+    viewerScores,
+    // booleanVotes tracked for future sync
+    booleanVotes: _booleanVotes,
+    audioState,
+    sendMessage,
+  } = useVoteSocket(voteState === "live" ? WS_URL : "");
 
   const [currentScores, setCurrentScores] = useState<Record<string, number>>(
     {}
@@ -607,14 +627,31 @@ export default function VotePage() {
         <StreamLinks />
 
         {/* Now Playing (only when live) */}
-        {isLive && <NowPlaying contestant={contestant} />}
+        {isLive && (
+          <NowPlaying contestant={contestant} audioState={audioState} />
+        )}
+
+        {/* Meter Bridge (viewer aggregate) — only when live with data */}
+        {isLive && viewerScores.votes > 0 && (
+          <MeterBridge viewerScores={viewerScores} />
+        )}
 
         {/* Fader Console + Inactive Overlay — stacked */}
         <div className="relative mt-8">
           <FaderConsole
             onScoresChange={handleScoresChange}
             disabled={!isLive || !connected || !votingOpen || !contestant}
-          />
+          >
+            {/* Boolean Votes — rendered inside FaderConsole area */}
+            {isLive && contestant && (
+              <BooleanVotes
+                disabled={!votingOpen}
+                viewerId={viewerId}
+                contestantName={contestant.name}
+                sendMessage={sendMessage}
+              />
+            )}
+          </FaderConsole>
 
           {/* Not-live overlay (episode states) */}
           {!isLive && <NotLiveOverlay />}

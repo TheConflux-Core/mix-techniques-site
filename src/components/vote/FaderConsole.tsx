@@ -12,18 +12,22 @@ const METRICS = [
   { key: "lowEnd", label: "LOW END" },
   { key: "clarity", label: "CLARITY" },
   { key: "balance", label: "BALANCE" },
-  { key: "dynamics", label: "DYNAMICS" },
+  { key: "midRange", label: "MID RANGE" },
   { key: "image", label: "IMAGE" },
+  { key: "highEnd", label: "HIGH END" },
+  { key: "overall", label: "OVERALL" },
 ];
 
-const DEFAULT_SCORE = 7;
+const DEFAULT_SCORE = 5;
 
 export default function FaderConsole({
   onScoresChange,
   disabled,
+  children,
 }: {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
+  children?: React.ReactNode;
 }) {
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -129,6 +133,9 @@ export default function FaderConsole({
           </span>
         </div>
       </div>
+
+      {/* Children (BooleanVotes, etc.) */}
+      {children}
     </div>
   );
 }

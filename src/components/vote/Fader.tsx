@@ -122,7 +122,7 @@ export default function Fader({
 
   return (
     <div
-      className={`flex flex-col items-center w-[clamp(70px,14vw,130px)] select-none ${
+      className={`flex flex-col items-center w-[clamp(44px,12vw,130px)] select-none ${
         disabled ? "pointer-events-none" : ""
       }`}
     >

@@ -1,5 +1,8 @@
 "use client";
 
+import { useRef, useEffect, useCallback } from "react";
+import type { AudioState } from "@/lib/useVoteSocket";
+
 interface Contestant {
   name: string;
   city?: string;
@@ -9,9 +12,44 @@ interface Contestant {
 
 interface NowPlayingProps {
   contestant: Contestant | null;
+  audioState: AudioState;
+  onSeek?: (position: number) => void;
 }
 
-export default function NowPlaying({ contestant }: NowPlayingProps) {
+export default function NowPlaying({
+  contestant,
+  audioState,
+}: NowPlayingProps) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Handle play/pause based on audioState
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audioState.playing && audioState.url) {
+      if (audio.src !== audioState.url) {
+        audio.src = audioState.url;
+        audio.load();
+      }
+      audio.play().catch(() => {
+        // Autoplay blocked — user interaction required
+      });
+    } else if (!audioState.playing) {
+      audio.pause();
+    }
+  }, [audioState.playing, audioState.url]);
+
+  // Handle next-contestant (reset)
+  useEffect(() => {
+    if (!audioState.url && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
+  }, [audioState.url]);
+
+  const isPlaying = audioState.playing && contestant;
+
   return (
     <div
       className="relative overflow-hidden rounded-md px-6 py-4 mb-6 flex items-center gap-4"
@@ -26,22 +64,24 @@ export default function NowPlaying({ contestant }: NowPlayingProps) {
       <div
         className="absolute left-0 top-0 bottom-0 w-1"
         style={{
-          background: "linear-gradient(180deg, var(--color-studio-gold), var(--color-amber-glow))",
+          background:
+            "linear-gradient(180deg, var(--color-studio-gold), var(--color-amber-glow))",
         }}
       />
 
       {/* Music note icon */}
       <div
         className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center ${
-          contestant ? "animate-pulse" : ""
+          isPlaying ? "animate-pulse" : ""
         }`}
         style={{
-          background: "radial-gradient(circle, rgba(212,168,67,0.15), rgba(26,15,10,0.8))",
+          background:
+            "radial-gradient(circle, rgba(212,168,67,0.15), rgba(26,15,10,0.8))",
           border: "1px solid rgba(212,168,67,0.2)",
         }}
       >
         <span
-          className={`text-xl ${contestant ? "animate-bounce" : ""}`}
+          className={`text-xl ${isPlaying ? "animate-bounce" : ""}`}
           style={{
             color: "var(--color-studio-gold)",
             opacity: 0.7,
@@ -58,7 +98,7 @@ export default function NowPlaying({ contestant }: NowPlayingProps) {
           className="text-[9px] tracking-[3px] uppercase mb-1"
           style={{ color: "rgba(212,168,67,0.4)" }}
         >
-          NOW PLAYING
+          {isPlaying ? "♪ NOW PLAYING" : "NOW PLAYING"}
         </div>
 
         {contestant ? (
@@ -77,6 +117,16 @@ export default function NowPlaying({ contestant }: NowPlayingProps) {
                 .filter(Boolean)
                 .join(" · ")}
             </div>
+            {/* Track info from audio */}
+            {audioState.title && (
+              <div
+                className="text-[10px] tracking-[1px] mt-1 truncate"
+                style={{ color: "rgba(212,168,67,0.35)" }}
+              >
+                {audioState.title}
+                {audioState.artist ? ` — ${audioState.artist}` : ""}
+              </div>
+            )}
           </>
         ) : (
           <div
@@ -87,6 +137,9 @@ export default function NowPlaying({ contestant }: NowPlayingProps) {
           </div>
         )}
       </div>
+
+      {/* Hidden audio element */}
+      <audio ref={audioRef} preload="none" className="hidden" />
     </div>
   );
 }

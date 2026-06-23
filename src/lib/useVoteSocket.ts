@@ -26,6 +26,17 @@ export interface VoteMessage {
   data?: Record<string, unknown>;
 }
 
+export interface BooleanVoteState {
+  [key: string]: { active: boolean; viewerVotes: number };
+}
+
+export interface AudioState {
+  playing: boolean;
+  url: string | null;
+  title: string | null;
+  artist: string | null;
+}
+
 export function useVoteSocket(serverUrl: string) {
   const [connected, setConnected] = useState(false);
   const [contestant, setContestant] = useState<Contestant | null>(null);
@@ -36,13 +47,20 @@ export function useVoteSocket(serverUrl: string) {
     total: 0,
     votes: 0,
   });
+  const [booleanVotes, setBooleanVotes] = useState<BooleanVoteState>({});
+  const [audioState, setAudioState] = useState<AudioState>({
+    playing: false,
+    url: null,
+    title: null,
+    artist: null,
+  });
+  const [episode, setEpisode] = useState<number>(1);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
   const connect = useCallback(() => {
     if (wsRef.current) return;
-    // Don't connect if no URL provided (e.g. episode not live)
     if (!serverUrl) return;
 
     let ws: WebSocket;
@@ -110,6 +128,22 @@ export function useVoteSocket(serverUrl: string) {
             votes: (d.viewerVotes as number) || 0,
           });
         }
+        if (d.episode !== undefined) setEpisode(d.episode as number);
+        if (d.audio) {
+          const audio = d.audio as Record<string, unknown>;
+          if (audio.playing && audio.url) {
+            setAudioState({
+              playing: true,
+              url: audio.url as string,
+              title: (audio.title as string) || null,
+              artist: (audio.artist as string) || null,
+            });
+            setVotingOpen(true);
+          } else if (!audio.playing) {
+            setAudioState((prev) => ({ ...prev, playing: false }));
+            setVotingOpen(false);
+          }
+        }
         break;
       }
       case "contestant-update":
@@ -119,6 +153,8 @@ export function useVoteSocket(serverUrl: string) {
         setContestant(null);
         setVotingOpen(false);
         setViewerScores({ metrics: {}, total: 0, votes: 0 });
+        setBooleanVotes({});
+        setAudioState({ playing: false, url: null, title: null, artist: null });
         break;
       case "leaderboard-update":
         applyLeaderboard(msg.data);
@@ -140,15 +176,53 @@ export function useVoteSocket(serverUrl: string) {
       case "voting-closed":
         setVotingOpen(false);
         break;
-      case "play-track":
-        setVotingOpen(true);
+      case "play-track": {
+        const d = msg.data as Record<string, unknown> | undefined;
+        if (d && d.url) {
+          setAudioState({
+            playing: true,
+            url: d.url as string,
+            title: (d.title as string) || null,
+            artist: (d.artist as string) || null,
+          });
+          setVotingOpen(true);
+        }
         break;
+      }
       case "pause-track":
+        setAudioState((prev) => ({ ...prev, playing: false }));
         setVotingOpen(false);
         break;
-      case "viewer-vote-ack":
-        // handled by caller
+      case "seek-track": {
+        // Seek is handled by the audio element directly in the component
         break;
+      }
+      case "boolean-vote": {
+        const d = msg.data as Record<string, unknown> | undefined;
+        if (d && d.key) {
+          const key = d.key as string;
+          setBooleanVotes((prev) => ({
+            ...prev,
+            [key]: {
+              active: d.active !== undefined ? !!d.active : !prev[key]?.active,
+              viewerVotes: (d.viewerVotes as number) ?? prev[key]?.viewerVotes ?? 0,
+            },
+          }));
+        }
+        break;
+      }
+      case "boolean-vote-viewer":
+        // Ack — handled by caller
+        break;
+      case "viewer-vote-ack":
+        break;
+      case "episode-update": {
+        const d = msg.data as Record<string, unknown> | undefined;
+        if (d && d.episode !== undefined) {
+          setEpisode(d.episode as number);
+        }
+        break;
+      }
     }
   }, []);
 
@@ -201,5 +275,15 @@ export function useVoteSocket(serverUrl: string) {
     };
   }, [connect]);
 
-  return { connected, contestant, leaderboard, votingOpen, viewerScores, sendMessage };
+  return {
+    connected,
+    contestant,
+    leaderboard,
+    votingOpen,
+    viewerScores,
+    booleanVotes,
+    audioState,
+    episode,
+    sendMessage,
+  };
 }
