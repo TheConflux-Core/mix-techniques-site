@@ -138,10 +138,8 @@ export function useVoteSocket(serverUrl: string) {
               title: (audio.title as string) || null,
               artist: (audio.artist as string) || null,
             });
-            setVotingOpen(true);
           } else if (!audio.playing) {
             setAudioState((prev) => ({ ...prev, playing: false }));
-            setVotingOpen(false);
           }
         }
         break;
