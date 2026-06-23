@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect, useState } from "react";
+import VuMeter from "./VuMeter";
 
 interface FaderProps {
   metricKey: string;
@@ -111,9 +112,6 @@ export default function Fader({
   );
 
   const pct = ((value - min) / (max - min)) * 100;
-  const viewerPct = viewerScore > 0
-    ? Math.max(0, Math.min(100, ((viewerScore - 1) / 9) * 100))
-    : 0;
 
   // Scale labels
   const scaleLabels: number[] = [];
@@ -121,18 +119,12 @@ export default function Fader({
     scaleLabels.push(t);
   }
 
-  // Viewer VU color
+  // Viewer VU color for needle
   let vuColor = "var(--color-studio-gold)";
-  let vuGrad = "linear-gradient(180deg, var(--color-studio-gold), rgba(212,168,67,0.4))";
-  let vuGlow = "0 0 4px rgba(212,168,67,0.3)";
   if (viewerScore >= 8) {
     vuColor = "#4CAF50";
-    vuGrad = "linear-gradient(180deg, #4CAF50, #2E7D32)";
-    vuGlow = "0 0 6px rgba(76,175,80,0.4)";
   } else if (viewerScore < 4 && viewerScore > 0) {
     vuColor = "#C4392A";
-    vuGrad = "linear-gradient(180deg, #C4392A, #8B2020)";
-    vuGlow = "0 0 4px rgba(196,57,42,0.3)";
   }
 
   return (
@@ -141,15 +133,18 @@ export default function Fader({
         disabled ? "pointer-events-none" : ""
       }`}
     >
-      {/* Label */}
-      <div
-        className="text-[clamp(8px,1.2vw,10px)] tracking-[2px] uppercase text-center whitespace-nowrap mb-2.5"
-        style={{ color: "rgba(212,168,67,0.5)" }}
-      >
-        {label}
-      </div>
+      {/* VU Meter — analog gauge above label */}
+      <VuMeter
+        score={viewerScore}
+        label={label}
+        size="sm"
+        color={vuColor}
+      />
 
-      {/* Fader + VU row */}
+      {/* Spacer between VU and fader */}
+      <div className="h-2" />
+
+      {/* Fader body */}
       <div className="flex items-stretch gap-1.5">
         {/* Fader body */}
         <div
@@ -226,46 +221,6 @@ export default function Fader({
           </div>
         </div>
 
-        {/* VU Meter — viewer aggregate for this metric */}
-        <div className="flex flex-col items-center w-3">
-          <div
-            className="flex-1 w-full rounded-sm overflow-hidden relative"
-            style={{
-              background: "rgba(26,15,10,0.9)",
-              border: "1px solid rgba(212,168,67,0.08)",
-            }}
-          >
-            {viewerScore > 0 ? (
-              <>
-                <div
-                  className="absolute bottom-0 left-0 right-0 rounded-b-sm transition-all duration-500"
-                  style={{
-                    height: `${viewerPct}%`,
-                    background: vuGrad,
-                    boxShadow: vuGlow,
-                  }}
-                />
-                <div
-                  className="absolute left-0 right-0 h-px transition-all duration-500"
-                  style={{
-                    bottom: `${viewerPct}%`,
-                    background: "rgba(240,230,211,0.5)",
-                  }}
-                />
-              </>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-1 h-1 rounded-full" style={{ background: "rgba(212,168,67,0.1)" }} />
-              </div>
-            )}
-          </div>
-          <div
-            className="text-[7px] font-bold mt-0.5 font-[family-name:var(--font-mono)]"
-            style={{ color: viewerScore > 0 ? "rgba(212,168,67,0.45)" : "rgba(212,168,67,0.15)" }}
-          >
-            {viewerScore > 0 ? viewerScore.toFixed(1) : "—"}
-          </div>
-        </div>
       </div>
 
       {/* Value */}

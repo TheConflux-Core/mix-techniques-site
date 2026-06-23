@@ -2,11 +2,13 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Fader from "./Fader";
+import ConsoleBridge from "./ConsoleBridge";
+import type { ViewerScores } from "@/lib/useVoteSocket";
 
 interface FaderConsoleProps {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
-  viewerScores?: Record<string, number>;
+  viewerScores?: ViewerScores;
 }
 
 const METRICS = [
@@ -19,17 +21,17 @@ const METRICS = [
   { key: "overall", label: "OVERALL" },
 ];
 
-const DEFAULT_SCORE = 5;
+const DEFAULT_SCORE = 7;
 
 export default function FaderConsole({
   onScoresChange,
   disabled,
-  viewerScores = {},
+  viewerScores,
   children,
 }: {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
-  viewerScores?: Record<string, number>;
+  viewerScores?: ViewerScores;
   children?: React.ReactNode;
 }) {
   const [scores, setScores] = useState<Record<string, number>>(() => {
@@ -94,6 +96,13 @@ export default function FaderConsole({
         }}
       />
 
+      {/* Console Bridge — host avg + viewer avg VU meters */}
+      <ConsoleBridge
+        hostAvg={avg}
+        viewerAvg={viewerScores?.total ?? 0}
+        viewerVotes={viewerScores?.votes ?? 0}
+      />
+
       {/* Section label */}
       <div
         className="text-[9px] tracking-[4px] uppercase text-center mb-5 relative z-10"
@@ -112,7 +121,7 @@ export default function FaderConsole({
             value={scores[m.key]}
             onChange={(v) => handleChange(m.key, v)}
             disabled={disabled}
-            viewerScore={viewerScores[m.key] ?? 0}
+            viewerScore={viewerScores?.metrics?.[m.key] ?? 0}
           />
         ))}
       </div>

@@ -635,7 +635,7 @@ export default function VotePage() {
           <FaderConsole
             onScoresChange={handleScoresChange}
             disabled={!isLive || !connected || !votingOpen || !contestant}
-            viewerScores={viewerScores.metrics}
+            viewerScores={viewerScores}
           >
             {/* Boolean Votes — rendered inside FaderConsole area */}
             {isLive && contestant && (
