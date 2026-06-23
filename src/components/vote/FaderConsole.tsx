@@ -6,6 +6,7 @@ import Fader from "./Fader";
 interface FaderConsoleProps {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
+  viewerScores?: Record<string, number>;
 }
 
 const METRICS = [
@@ -23,10 +24,12 @@ const DEFAULT_SCORE = 5;
 export default function FaderConsole({
   onScoresChange,
   disabled,
+  viewerScores = {},
   children,
 }: {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
+  viewerScores?: Record<string, number>;
   children?: React.ReactNode;
 }) {
   const [scores, setScores] = useState<Record<string, number>>(() => {
@@ -109,6 +112,7 @@ export default function FaderConsole({
             value={scores[m.key]}
             onChange={(v) => handleChange(m.key, v)}
             disabled={disabled}
+            viewerScore={viewerScores[m.key] ?? 0}
           />
         ))}
       </div>

@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/client";
 import FaderConsole from "@/components/vote/FaderConsole";
 import NowPlaying from "@/components/vote/NowPlaying";
 import Leaderboard from "@/components/vote/Leaderboard";
-import MeterBridge from "@/components/vote/MeterBridge";
 import BooleanVotes from "@/components/vote/BooleanVotes";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8765";
@@ -309,7 +308,7 @@ export default function VotePage() {
 
   // ─── Stream links ──────────────────────────────────────────────
   const StreamLinks = () => (
-    <div className="flex flex-wrap justify-center gap-3 mt-4">
+    <div className="flex flex-wrap justify-center gap-3 mt-4 mb-6">
       {episode?.youtube_url && (
         <a
           href={episode.youtube_url}
@@ -631,16 +630,12 @@ export default function VotePage() {
           <NowPlaying contestant={contestant} audioState={audioState} />
         )}
 
-        {/* Meter Bridge (viewer aggregate) — only when live with data */}
-        {isLive && viewerScores.votes > 0 && (
-          <MeterBridge viewerScores={viewerScores} />
-        )}
-
         {/* Fader Console + Inactive Overlay — stacked */}
         <div className="relative mt-8">
           <FaderConsole
             onScoresChange={handleScoresChange}
             disabled={!isLive || !connected || !votingOpen || !contestant}
+            viewerScores={viewerScores.metrics}
           >
             {/* Boolean Votes — rendered inside FaderConsole area */}
             {isLive && contestant && (
@@ -692,8 +687,8 @@ export default function VotePage() {
           )}
         </div>
 
-        {/* Leaderboard (only when live) */}
-        {isLive && <Leaderboard entries={leaderboard} />}
+        {/* Leaderboard — hidden for now */}
+        {/* {isLive && <Leaderboard entries={leaderboard} />} */}
       </div>
 
       {toastEl}
