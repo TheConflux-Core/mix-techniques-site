@@ -9,15 +9,15 @@ interface VuMeterProps {
 
 function scoreToColor(score: number): string {
   if (score >= 8) return "#4CAF50";
-  if (score >= 6) return "var(--color-studio-gold)";
-  if (score >= 4) return "var(--color-amber-glow)";
+  if (score >= 6) return "#F0D080";
+  if (score >= 4) return "#FFB84D";
   return "#C4392A";
 }
 
 function scoreToGlow(score: number): string {
   if (score >= 8) return "rgba(76,175,80,0.5)";
-  if (score >= 6) return "rgba(212,168,67,0.5)";
-  if (score >= 4) return "rgba(232,155,46,0.4)";
+  if (score >= 6) return "rgba(240,208,128,0.6)";
+  if (score >= 4) return "rgba(255,184,77,0.5)";
   return "rgba(196,57,42,0.4)";
 }
 
