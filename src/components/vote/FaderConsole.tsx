@@ -121,7 +121,6 @@ export default function FaderConsole({
             value={scores[m.key]}
             onChange={(v) => handleChange(m.key, v)}
             disabled={disabled}
-            viewerScore={viewerScores?.metrics?.[m.key] ?? 0}
           />
         ))}
       </div>

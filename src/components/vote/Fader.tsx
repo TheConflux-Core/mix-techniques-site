@@ -11,7 +11,6 @@ interface FaderProps {
   min?: number;
   max?: number;
   disabled?: boolean;
-  viewerScore?: number;
 }
 
 const MIN = 1;
@@ -33,7 +32,6 @@ export default function Fader({
   min = MIN,
   max = MAX,
   disabled = false,
-  viewerScore = 0,
 }: FaderProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -119,26 +117,17 @@ export default function Fader({
     scaleLabels.push(t);
   }
 
-  // Viewer VU color for needle
-  let vuColor = "var(--color-studio-gold)";
-  if (viewerScore >= 8) {
-    vuColor = "#4CAF50";
-  } else if (viewerScore < 4 && viewerScore > 0) {
-    vuColor = "#C4392A";
-  }
-
   return (
     <div
       className={`flex flex-col items-center w-[clamp(44px,12vw,130px)] select-none ${
         disabled ? "pointer-events-none" : ""
       }`}
     >
-      {/* VU Meter — analog gauge above label */}
+      {/* VU Meter — analog gauge showing user's score */}
       <VuMeter
-        score={viewerScore}
+        score={value}
         label={label}
         size="sm"
-        color={vuColor}
       />
 
       {/* Spacer between VU and fader */}
