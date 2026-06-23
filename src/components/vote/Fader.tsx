@@ -111,6 +111,22 @@ export default function Fader({
 
   const pct = ((value - min) / (max - min)) * 100;
 
+  // Color based on score
+  let fillColor = "var(--color-studio-gold)";
+  let fillGlow = "rgba(212,168,67,0.3)";
+  if (value >= 8) { fillColor = "#4CAF50"; fillGlow = "rgba(76,175,80,0.4)"; }
+  else if (value >= 6) { fillColor = "var(--color-studio-gold)"; fillGlow = "rgba(212,168,67,0.3)"; }
+  else if (value >= 4) { fillColor = "var(--color-amber-glow)"; fillGlow = "rgba(232,155,46,0.3)"; }
+  else { fillColor = "#C4392A"; fillGlow = "rgba(196,57,42,0.3)"; }
+
+  // Value color
+  let valColor = "var(--color-amber-glow)";
+  let valGlow = "0 0 10px rgba(232,155,46,0.3)";
+  if (value >= 8) { valColor = "#4CAF50"; valGlow = "0 0 10px rgba(76,175,80,0.4)"; }
+  else if (value >= 6) { valColor = "var(--color-amber-glow)"; valGlow = "0 0 10px rgba(232,155,46,0.3)"; }
+  else if (value >= 4) { valColor = "var(--color-amber-glow)"; valGlow = "0 0 10px rgba(232,155,46,0.3)"; }
+  else { valColor = "#C4392A"; valGlow = "0 0 10px rgba(196,57,42,0.3)"; }
+
   // Scale labels
   const scaleLabels: number[] = [];
   for (let t = max; t >= min; t--) {
@@ -171,8 +187,8 @@ export default function Fader({
               className="absolute bottom-0 left-0 right-0 rounded-b"
               style={{
                 height: `${pct}%`,
-                background:
-                  "linear-gradient(180deg, var(--color-studio-gold), rgba(212,168,67,0.3))",
+                background: `linear-gradient(180deg, ${fillColor}, ${fillColor}4D)`,
+                boxShadow: `0 0 6px ${fillGlow}`,
                 transition: dragging ? "none" : "height 0.08s ease-out",
               }}
             />
@@ -216,8 +232,8 @@ export default function Fader({
       <div
         className="text-[clamp(18px,2.5vw,24px)] font-bold min-w-[50px] text-center font-[family-name:var(--font-mono)] mt-2.5"
         style={{
-          color: "var(--color-amber-glow)",
-          textShadow: "0 0 10px rgba(232,155,46,0.3)",
+          color: valColor,
+          textShadow: valGlow,
         }}
       >
         {value.toFixed(1)}

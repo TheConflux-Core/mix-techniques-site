@@ -36,10 +36,10 @@ export default function ConsoleBridge({
 
       {/* Meters row */}
       <div className="flex items-center justify-center gap-6">
-        {/* Host Avg Meter */}
+        {/* Your Score Meter */}
         <VuMeter
           score={hostAvg}
-          label="HOST AVG"
+          label="YOUR AVG"
           size="md"
         />
 
@@ -55,7 +55,7 @@ export default function ConsoleBridge({
         {/* Viewer Avg Meter */}
         <VuMeter
           score={viewerAvg}
-          label="VIEWER AVG"
+          label="COMMUNITY"
           size="md"
         />
       </div>

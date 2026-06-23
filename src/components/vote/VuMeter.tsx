@@ -4,17 +4,35 @@ interface VuMeterProps {
   score: number;        // 0-10
   label: string;        // e.g. "LOW END", "VIEWER AVG"
   size?: "sm" | "md";   // sm for per-fader, md for bridge
-  color?: string;       // needle color (default gold)
+  color?: string;       // needle color (default computed from score)
+}
+
+function scoreToColor(score: number): string {
+  if (score >= 8) return "#4CAF50";
+  if (score >= 6) return "var(--color-studio-gold)";
+  if (score >= 4) return "var(--color-amber-glow)";
+  return "#C4392A";
+}
+
+function scoreToGlow(score: number): string {
+  if (score >= 8) return "rgba(76,175,80,0.5)";
+  if (score >= 6) return "rgba(212,168,67,0.5)";
+  if (score >= 4) return "rgba(232,155,46,0.4)";
+  return "rgba(196,57,42,0.4)";
 }
 
 export default function VuMeter({
   score,
   label,
   size = "sm",
-  color = "var(--color-studio-gold)",
+  color,
 }: VuMeterProps) {
   // Clamp score 0-10
   const clamped = Math.max(0, Math.min(10, score));
+
+  // Compute color from score if not provided
+  const needleColor = color || (score > 0 ? scoreToColor(clamped) : "var(--color-studio-gold)");
+  const glowColor = score > 0 ? scoreToGlow(clamped) : "rgba(212,168,67,0.5)";
 
   // Map score to rotation: 0 → -55deg, 10 → +55deg
   const rotation = -55 + (clamped / 10) * 110;
@@ -129,11 +147,11 @@ export default function VuMeter({
             bottom: isMd ? 18 : 12,
             width: 2,
             height: needleHeight,
-            background: `linear-gradient(to top, ${color}, rgba(212,168,67,0.4))`,
+            background: `linear-gradient(to top, ${needleColor}, ${needleColor}66)`,
             transformOrigin: "50% 100%",
             transform: `translateX(-50%) rotate(${rotation}deg)`,
             borderRadius: 1,
-            boxShadow: `0 0 ${isMd ? 10 : 6}px rgba(212,168,67,0.5)`,
+            boxShadow: `0 0 ${isMd ? 10 : 6}px ${glowColor}`,
             transition: "transform 0.15s ease-out",
           }}
         >
@@ -143,8 +161,8 @@ export default function VuMeter({
             style={{
               width: isMd ? 7 : 5,
               height: isMd ? 7 : 5,
-              background: color,
-              boxShadow: `0 0 ${isMd ? 12 : 8}px rgba(212,168,67,0.6)`,
+              background: needleColor,
+              boxShadow: `0 0 ${isMd ? 12 : 8}px ${glowColor}`,
             }}
           />
         </div>
@@ -162,11 +180,11 @@ export default function VuMeter({
       <div
         className={`font-[family-name:var(--font-mono)] font-bold mt-1 ${scoreSize}`}
         style={{
-          color,
-          textShadow: `0 0 8px rgba(212,168,67,0.3)`,
+          color: needleColor,
+          textShadow: `0 0 8px ${glowColor}`,
         }}
       >
-        {score > 0 ? score.toFixed(1) : "—"}
+        {score > 0 ? score.toFixed(1) : "\u2014"}
       </div>
 
       {/* Label */}
