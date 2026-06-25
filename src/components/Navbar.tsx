@@ -14,7 +14,7 @@ export default function Navbar() {
           href="/"
           className="font-[family-name:var(--font-display)] text-[#F0E6D3] text-xl md:text-2xl tracking-[0.2em] uppercase font-bold link-shimmer"
         >
-          Mix Techniques
+          MIX <span style={{ color: "#D4A843" }}>TECHNIQUES</span>
         </Link>
         <div className="flex items-center gap-8">
           <Link
