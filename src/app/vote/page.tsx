@@ -309,21 +309,19 @@ export default function VotePage() {
   // ─── Stream links ──────────────────────────────────────────────
   const StreamLinks = () => (
     <div className="flex flex-wrap justify-center gap-3 mt-4 mb-6">
-      {episode?.youtube_url && (
-        <a
-          href={episode.youtube_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 rounded text-[10px] tracking-[2px] uppercase font-bold transition-all duration-200 hover:scale-105"
-          style={{
-            background: "rgba(212,168,67,0.15)",
-            border: "1px solid rgba(212,168,67,0.3)",
-            color: "var(--color-studio-gold)",
-          }}
-        >
-          ▶ YouTube
-        </a>
-      )}
+      <a
+        href={episode?.youtube_url || "https://youtube.com"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-4 py-2 rounded text-[10px] tracking-[2px] uppercase font-bold transition-all duration-200 hover:scale-105"
+        style={{
+          background: "rgba(255,0,0,0.12)",
+          border: "1px solid rgba(255,0,0,0.3)",
+          color: "#FF0000",
+        }}
+      >
+        ▶ YouTube
+      </a>
       <a
         href="https://twitch.tv"
         target="_blank"
@@ -349,6 +347,45 @@ export default function VotePage() {
         }}
       >
         ▶ Kick
+      </a>
+      <a
+        href="https://open.spotify.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-4 py-2 rounded text-[10px] tracking-[2px] uppercase font-bold transition-all duration-200 hover:scale-105"
+        style={{
+          background: "rgba(30,215,96,0.12)",
+          border: "1px solid rgba(30,215,96,0.3)",
+          color: "#1ED760",
+        }}
+      >
+        🎧 Spotify
+      </a>
+      <a
+        href="https://podcasts.apple.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-4 py-2 rounded text-[10px] tracking-[2px] uppercase font-bold transition-all duration-200 hover:scale-105"
+        style={{
+          background: "rgba(157,59,255,0.12)",
+          border: "1px solid rgba(157,59,255,0.3)",
+          color: "#9D3BFF",
+        }}
+      >
+        🎧 Apple Podcasts
+      </a>
+      <a
+        href="https://music.amazon.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-4 py-2 rounded text-[10px] tracking-[2px] uppercase font-bold transition-all duration-200 hover:scale-105"
+        style={{
+          background: "rgba(51,186,204,0.12)",
+          border: "1px solid rgba(51,186,204,0.3)",
+          color: "#33BACC",
+        }}
+      >
+        🎧 Amazon Music
       </a>
     </div>
   );
