@@ -485,7 +485,7 @@ export default function BackstagePage() {
         </div>
       </div>
 
-      {/* Daily.co Iframe */}
+      {/* Jitsi Meet Iframe */}
       <div className="w-full max-w-[900px]">
         {roomUrl ? (
           <iframe
