@@ -605,7 +605,7 @@ export default function VotePage() {
   const isLive = voteState === "live";
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden overflow-y-auto flex flex-col items-center">
+    <div className="min-h-screen relative overflow-x-hidden overflow-y-auto flex flex-col items-center carbon-fiber">
       {/* WS Status indicator (only when live) */}
       {isLive && (
         <div className="fixed top-3 right-4 z-[100] flex items-center gap-1.5 text-[9px] tracking-[2px] uppercase">
