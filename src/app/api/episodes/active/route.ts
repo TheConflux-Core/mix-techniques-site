@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 const STATUS_PRIORITY = ["live", "ready", "post_production", "published"] as const;
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
 
 // GET /api/episodes/active — get the most relevant episode for the vote page
 export async function GET() {
@@ -33,15 +43,15 @@ export async function GET() {
     }
 
     if (!episode) {
-      return NextResponse.json({ episode: null });
+      return NextResponse.json({ episode: null }, { headers: CORS_HEADERS });
     }
 
-    return NextResponse.json({ episode });
+    return NextResponse.json({ episode }, { headers: CORS_HEADERS });
   } catch (err: unknown) {
     console.error("Active episode error:", err);
     return NextResponse.json(
       { episode: null, error: "Internal server error" },
-      { status: 500 }
+      { status: 500, headers: CORS_HEADERS }
     );
   }
 }
