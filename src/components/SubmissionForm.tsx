@@ -239,7 +239,7 @@ export default function SubmissionForm() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Pre-fill name/email from auth user and fetch profile slug
+  // Pre-fill from auth user + profiles table
   useEffect(() => {
     if (!user || prefilled) return;
 
@@ -253,15 +253,31 @@ export default function SubmissionForm() {
     }));
     setPrefilled(true);
 
-    // Fetch profile to get display_name for slug
+    // Fetch profile for slug + auto-fill fields
     supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name, location, genre, social_links")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
-        if (data?.display_name) {
-          setProfileSlug(slugify(data.display_name));
+        if (!data) return;
+        if (data.display_name) setProfileSlug(slugify(data.display_name));
+        setForm((prev) => ({
+          ...prev,
+          name: prev.name || data.display_name || displayName,
+          location: prev.location || data.location || "",
+          genre: prev.genre || data.genre || "",
+          socialLinks: {
+            instagram: prev.socialLinks.instagram || data.social_links?.instagram || "",
+            twitter: prev.socialLinks.twitter || data.social_links?.twitter || "",
+            tiktok: prev.socialLinks.tiktok || data.social_links?.tiktok || "",
+            youtube: prev.socialLinks.youtube || data.social_links?.youtube || "",
+            soundcloud: prev.socialLinks.soundcloud || data.social_links?.soundcloud || "",
+          },
+        }));
+        // Auto-expand social links if any are filled
+        if (data.social_links && Object.values(data.social_links).some((v: any) => v)) {
+          setShowSocial(true);
         }
       });
   }, [user, prefilled, supabase]);
