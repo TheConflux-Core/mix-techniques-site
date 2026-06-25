@@ -129,6 +129,11 @@ export default function EditProfilePage() {
 
       if (updateError) throw updateError;
 
+      // Sync avatar to auth user metadata (so Navbar picks it up)
+      await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl },
+      });
+
       setAvatarPreview(publicUrl);
       if (profile) {
         setProfile({ ...profile, avatar_url: publicUrl });
