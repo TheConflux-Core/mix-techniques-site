@@ -95,7 +95,7 @@ export default function EditProfilePage() {
     if (!file || !user) return;
 
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-    const filePath = `${user.id}.${ext}`;
+    const filePath = `${user.id}/avatar.${ext}`;
 
     setUploadingAvatar(true);
     setError(null);
