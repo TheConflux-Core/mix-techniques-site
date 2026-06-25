@@ -101,10 +101,16 @@ export default function EditProfilePage() {
     setError(null);
 
     try {
+      // Delete existing avatar first (upsert requires DELETE policy we don't have)
+      await supabase.storage
+        .from("avatars")
+        .remove([filePath])
+        .catch(() => {}); // Ignore if file doesn't exist
+
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
