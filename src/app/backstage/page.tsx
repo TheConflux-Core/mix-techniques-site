@@ -20,7 +20,7 @@ export default function BackstagePage() {
   const { user, loading: authLoading } = useAuth();
   const [submission, setSubmission] = useState<BackstageSubmission | null>(null);
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+
   const [status, setStatus] = useState<BackstageStatus>("loading");
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +69,7 @@ export default function BackstagePage() {
     };
   }, [user, authLoading]);
 
-  // Once we have a submission, fetch or create the backstage room + token
+  // Once we have a submission, fetch or create the backstage room
   useEffect(() => {
     if (!submission || status === "no_submission" || status === "complete") return;
 
@@ -111,22 +111,7 @@ export default function BackstagePage() {
         if (cancelled) return;
         setRoomUrl(url);
 
-        // Generate a meeting token
-        const tokenRes = await fetch("/api/backstage/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ submission_id: submission!.id }),
-        });
-
-        if (!tokenRes.ok) {
-          const errData = await tokenRes.json();
-          throw new Error(errData.error || "Failed to generate token");
-        }
-
-        const tokenData = await tokenRes.json();
-        if (!cancelled) {
-          setToken(tokenData.token);
-        }
+        // Jitsi doesn't need tokens — room URL is enough
       } catch (err: unknown) {
         if (!cancelled) {
           const message =
@@ -502,9 +487,9 @@ export default function BackstagePage() {
 
       {/* Daily.co Iframe */}
       <div className="w-full max-w-[900px]">
-        {roomUrl && token ? (
+        {roomUrl ? (
           <iframe
-            src={`${roomUrl}?t=${token}`}
+            src={`${roomUrl}#config.prejoinPageEnabled=false&config.startWithVideoMuted=false&config.startWithAudioMuted=false&interfaceConfig.TOOLBAR_BUTTONS=chat,camera,toggle-camera,microphone,settings`}
             allow="camera;microphone;fullscreen"
             style={{
               width: "100%",
