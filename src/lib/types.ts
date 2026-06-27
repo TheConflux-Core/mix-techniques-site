@@ -77,6 +77,17 @@ export interface Score {
   audience_score: number | null;
   notes: string | null;
   golden_knob: boolean;
+  metric_low_end: number | null;
+  metric_clarity: number | null;
+  metric_balance: number | null;
+  metric_mid_range: number | null;
+  metric_image: number | null;
+  metric_high_end: number | null;
+  metric_overall: number | null;
+  combined_score: number | null;
+  viewer_avg: number | null;
+  viewer_vote_count: number | null;
+  judge_scores: Record<string, any>;
   created_at: string;
 }
 
