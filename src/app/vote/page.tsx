@@ -626,54 +626,7 @@ export default function VotePage() {
 
   return (
     <div className="min-h-screen relative overflow-x-hidden overflow-y-auto flex flex-col items-center carbon-fiber">
-      {/* WS Status + MIDI toggle (only when live) */}
-      {isLive && (
-        <div className="fixed top-3 z-[100] flex items-center gap-3">
-          {/* MIDI button — top left */}
-          {midiSupported && (
-            <button
-              onClick={() => {
-                if (!midiEnabled) setMidiEnabled(true);
-                toggleLearn();
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded transition-all text-[9px] tracking-[2px] uppercase"
-              style={{
-                border: `1px solid ${
-                  learnMode
-                    ? "var(--color-studio-gold)"
-                    : "rgba(212,168,67,0.2)"
-                }`,
-                background: learnMode
-                  ? "rgba(212,168,67,0.08)"
-                  : "rgba(26,15,10,0.7)",
-                color: learnMode
-                  ? "var(--color-studio-gold)"
-                  : "rgba(212,168,67,0.4)",
-              }}
-            >
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  background: learnMode
-                    ? "var(--color-amber-glow)"
-                    : midiConnected
-                    ? "#4CAF50"
-                    : "#666",
-                  boxShadow: learnMode
-                    ? "0 0 8px rgba(232,155,46,0.6)"
-                    : midiConnected
-                    ? "0 0 6px rgba(76,175,80,0.5)"
-                    : "none",
-                  animation: learnMode
-                    ? "midiPulse 1s ease-in-out infinite"
-                    : "none",
-                }}
-              />
-              MIDI
-            </button>
-          )}
-        </div>
-      )}
+      {/* WS Status (only when live) */}
       {isLive && (
         <div className="fixed top-3 right-4 z-[100] flex items-center gap-1.5 text-[9px] tracking-[2px] uppercase">
           <div
@@ -792,28 +745,114 @@ export default function VotePage() {
           )}
         </div>
 
-        {/* MIDI Panel — visible when learn mode is active */}
-        {isLive && midiEnabled && learnMode && (
-          <div className="mt-4">
-            <MidiPanel
-              learnMode={learnMode}
-              learnTarget={learnTarget}
-              mappings={midiMappings}
-              metrics={[
-                { key: "lowEnd", label: "Low End" },
-                { key: "clarity", label: "Clarity" },
-                { key: "balance", label: "Balance" },
-                { key: "midRange", label: "Mid Range" },
-                { key: "image", label: "Image" },
-                { key: "highEnd", label: "High End" },
-                { key: "overall", label: "Overall" },
-              ]}
-              onToggleLearn={toggleLearn}
-              onClearMapping={clearMapping}
-              connected={midiConnected}
-            />
+        {/* MIDI Controller Section */}
+        <div className="mt-6">
+          <div
+            className="rounded-lg px-6 py-5 overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, rgba(42,24,16,0.85), rgba(26,15,10,0.9))",
+              border: "1px solid rgba(212,168,67,0.1)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div
+                className="text-[9px] tracking-[3px] uppercase"
+                style={{ color: "rgba(212,168,67,0.5)" }}
+              >
+                MIDI Controller
+              </div>
+              <button
+                onClick={() => {
+                  if (!midiEnabled) setMidiEnabled(true);
+                  toggleLearn();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded transition-all text-[10px] tracking-[2px] uppercase"
+                style={{
+                  border: `1px solid ${
+                    learnMode
+                      ? "var(--color-studio-gold)"
+                      : "rgba(212,168,67,0.2)"
+                  }`,
+                  background: learnMode
+                    ? "rgba(212,168,67,0.08)"
+                    : "rgba(26,15,10,0.7)",
+                  color: learnMode
+                    ? "var(--color-studio-gold)"
+                    : "rgba(212,168,67,0.4)",
+                  cursor: "pointer",
+                }}
+              >
+                <div
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background: learnMode
+                      ? "var(--color-amber-glow)"
+                      : midiConnected
+                      ? "#4CAF50"
+                      : "#666",
+                    boxShadow: learnMode
+                      ? "0 0 8px rgba(232,155,46,0.6)"
+                      : midiConnected
+                      ? "0 0 6px rgba(76,175,80,0.5)"
+                      : "none",
+                    animation: learnMode ? "midiPulse 1s ease-in-out infinite" : "none",
+                  }}
+                />
+                {learnMode ? "Cancel" : "MIDI Learn"}
+              </button>
+            </div>
+
+            {/* Status */}
+            <div
+              className="flex items-center gap-2 mb-3"
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: midiConnected ? "#4CAF50" : "#666",
+                  boxShadow: midiConnected ? "0 0 6px rgba(76,175,80,0.5)" : "none",
+                }}
+              />
+              <span
+                className="text-[9px] tracking-[1px]"
+                style={{
+                  color: midiConnected
+                    ? "rgba(76,175,80,0.6)"
+                    : "rgba(212,168,67,0.3)",
+                }}
+              >
+                {learnTarget
+                  ? "MOVE A FADER ON YOUR CONTROLLER..."
+                  : midiConnected
+                  ? "CONNECTED — click a metric to map"
+                  : "NO DEVICE DETECTED"}
+              </span>
+            </div>
+
+            {/* Metric rows */}
+            {midiEnabled && (
+              <MidiPanel
+                learnMode={learnMode}
+                learnTarget={learnTarget}
+                mappings={midiMappings}
+                metrics={[
+                  { key: "lowEnd", label: "Low End" },
+                  { key: "clarity", label: "Clarity" },
+                  { key: "balance", label: "Balance" },
+                  { key: "midRange", label: "Mid Range" },
+                  { key: "image", label: "Image" },
+                  { key: "highEnd", label: "High End" },
+                  { key: "overall", label: "Overall" },
+                ]}
+                onToggleLearn={toggleLearn}
+                onClearMapping={clearMapping}
+                connected={midiConnected}
+              />
+            )}
           </div>
-        )}
+        </div>
 
         {/* Leaderboard — hidden for now */}
         {/* {isLive && <Leaderboard entries={leaderboard} />} */}
