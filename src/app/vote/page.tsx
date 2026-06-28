@@ -86,12 +86,23 @@ export default function VotePage() {
     learnMode,
     learnTarget,
     mappings: midiMappings,
+    booleanMappings,
     toggleLearn,
     clearMapping,
+    clearBooleanMapping,
   } = useMidi({
     enabled: midiEnabled,
     onScoreChange: (metricKey, score) => {
       faderConsoleRef.current?.(metricKey, score);
+    },
+    onBooleanVote: (key) => {
+      // Send boolean vote via WebSocket
+      if (connected && contestant?.name) {
+        sendMessage("boolean-vote-viewer", {
+          key,
+          viewer: `user_${user?.id}`,
+        });
+      }
     },
   });
 
@@ -748,7 +759,7 @@ export default function VotePage() {
         {/* MIDI Controller Section */}
         <div className="mt-6">
           <div
-            className="rounded-lg px-6 py-5 overflow-hidden"
+            className="rounded-lg px-6 py-6 overflow-hidden"
             style={{
               background: "linear-gradient(135deg, rgba(42,24,16,0.85), rgba(26,15,10,0.9))",
               border: "1px solid rgba(212,168,67,0.1)",
@@ -824,19 +835,20 @@ export default function VotePage() {
                 }}
               >
                 {learnTarget
-                  ? "MOVE A FADER ON YOUR CONTROLLER..."
+                  ? "MOVE A FADER OR PRESS A PAD..."
                   : midiConnected
-                  ? "CONNECTED — click a metric to map"
+                  ? "CONNECTED — click any row to map"
                   : "NO DEVICE DETECTED"}
               </span>
             </div>
 
-            {/* Metric rows */}
+            {/* Metric rows + Quick votes */}
             {midiEnabled && (
               <MidiPanel
                 learnMode={learnMode}
                 learnTarget={learnTarget}
                 mappings={midiMappings}
+                booleanMappings={booleanMappings}
                 metrics={[
                   { key: "lowEnd", label: "Low End" },
                   { key: "clarity", label: "Clarity" },
@@ -846,8 +858,17 @@ export default function VotePage() {
                   { key: "highEnd", label: "High End" },
                   { key: "overall", label: "Overall" },
                 ]}
+                booleanVotes={[
+                  { key: "loveThisMix", emoji: "🔥", label: "Love" },
+                  { key: "addToPlaylist", emoji: "💿", label: "Playlist" },
+                  { key: "greatProduction", emoji: "🎧", label: "Production" },
+                  { key: "crankIt", emoji: "🔊", label: "Crank It" },
+                  { key: "horribleMix", emoji: "🗑️", label: "Horrible" },
+                  { key: "skip", emoji: "❌", label: "Skip" },
+                ]}
                 onToggleLearn={toggleLearn}
                 onClearMapping={clearMapping}
+                onClearBooleanMapping={clearBooleanMapping}
                 connected={midiConnected}
               />
             )}

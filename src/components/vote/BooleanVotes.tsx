@@ -42,12 +42,12 @@ export default function BooleanVotes({
   return (
     <div className="relative z-10 mt-4">
       <div
-        className="text-[9px] tracking-[3px] uppercase text-center mb-2"
+        className="text-[11px] tracking-[3px] uppercase text-center mb-3"
         style={{ color: "rgba(212,168,67,0.4)" }}
       >
         QUICK VOTES
       </div>
-      <div className="flex flex-wrap justify-center gap-1.5">
+      <div className="flex flex-wrap justify-center gap-2">
         {VOTE_BUTTONS.map((btn) => {
           const isActive = !!activeVotes[btn.key];
           return (
@@ -55,7 +55,7 @@ export default function BooleanVotes({
               key={btn.key}
               onClick={() => handleClick(btn.key)}
               disabled={disabled}
-              className="font-[family-name:var(--font-mono)] text-[9px] tracking-[1px] px-3 py-1.5 rounded transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="font-[family-name:var(--font-mono)] text-[12px] tracking-[1px] px-5 py-2.5 rounded transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 border: isActive
                   ? "1px solid var(--color-amber-glow)"
