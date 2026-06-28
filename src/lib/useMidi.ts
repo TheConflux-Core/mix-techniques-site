@@ -18,7 +18,10 @@ export function useMidi(options: {
   const onScoreChangeRef = useRef(onScoreChange);
   onScoreChangeRef.current = onScoreChange;
 
-  const [midiSupported, setMidiSupported] = useState(false);
+  const [midiSupported, setMidiSupported] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !!navigator.requestMIDIAccess;
+  });
   const [connected, setConnected] = useState(false);
   const [learnMode, setLearnMode] = useState(false);
   const [learnTarget, setLearnTarget] = useState<string | null>(null);
@@ -105,15 +108,13 @@ export function useMidi(options: {
     setConnected(true);
   }, [mappings]);
 
-  // Init MIDI
+  // Init MIDI — request access only when enabled
   useEffect(() => {
     if (!enabled) return;
-
     if (!navigator.requestMIDIAccess) {
       setMidiSupported(false);
       return;
     }
-    setMidiSupported(true);
 
     navigator
       .requestMIDIAccess({ sysex: false })
