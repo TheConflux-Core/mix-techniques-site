@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Fader from "./Fader";
 import ConsoleBridge from "./ConsoleBridge";
 import type { ViewerScores } from "@/lib/useVoteSocket";
@@ -9,6 +9,8 @@ interface FaderConsoleProps {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
   viewerScores?: ViewerScores;
+  /** Ref callback for MIDI integration — parent calls this to set a metric score */
+  onScoreRef?: React.MutableRefObject<((metricKey: string, score: number) => void) | null>;
 }
 
 const METRICS = [
@@ -27,11 +29,13 @@ export default function FaderConsole({
   onScoresChange,
   disabled,
   viewerScores,
+  onScoreRef,
   children,
 }: {
   onScoresChange: (scores: Record<string, number>, avg: number) => void;
   disabled: boolean;
   viewerScores?: ViewerScores;
+  onScoreRef?: React.MutableRefObject<((metricKey: string, score: number) => void) | null>;
   children?: React.ReactNode;
 }) {
   const [scores, setScores] = useState<Record<string, number>>(() => {
@@ -56,6 +60,16 @@ export default function FaderConsole({
     },
     [onScoresChange]
   );
+
+  // Expose handleChange to parent for MIDI integration
+  useEffect(() => {
+    if (onScoreRef) {
+      onScoreRef.current = handleChange;
+    }
+    return () => {
+      if (onScoreRef) onScoreRef.current = null;
+    };
+  }, [onScoreRef, handleChange]);
 
   // Avg color
   let avgColor = "var(--color-studio-gold)";

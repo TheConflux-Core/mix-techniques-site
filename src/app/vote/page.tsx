@@ -8,6 +8,8 @@ import FaderConsole from "@/components/vote/FaderConsole";
 import NowPlaying from "@/components/vote/NowPlaying";
 import Leaderboard from "@/components/vote/Leaderboard";
 import BooleanVotes from "@/components/vote/BooleanVotes";
+import MidiPanel from "@/components/vote/MidiPanel";
+import { useMidi } from "@/lib/useMidi";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8765";
 
@@ -74,6 +76,24 @@ export default function VotePage() {
     text: string;
     type: "ok" | "err";
   } | null>(null);
+
+  // MIDI controller support
+  const [midiEnabled, setMidiEnabled] = useState(false);
+  const faderConsoleRef = useRef<((metricKey: string, score: number) => void) | null>(null);
+  const {
+    midiSupported,
+    connected: midiConnected,
+    learnMode,
+    learnTarget,
+    mappings: midiMappings,
+    toggleLearn,
+    clearMapping,
+  } = useMidi({
+    enabled: midiEnabled,
+    onScoreChange: (metricKey, score) => {
+      faderConsoleRef.current?.(metricKey, score);
+    },
+  });
 
   // Fetch the active episode on mount
   useEffect(() => {
@@ -606,7 +626,54 @@ export default function VotePage() {
 
   return (
     <div className="min-h-screen relative overflow-x-hidden overflow-y-auto flex flex-col items-center carbon-fiber">
-      {/* WS Status indicator (only when live) */}
+      {/* WS Status + MIDI toggle (only when live) */}
+      {isLive && (
+        <div className="fixed top-3 z-[100] flex items-center gap-3">
+          {/* MIDI button — top left */}
+          {midiSupported && (
+            <button
+              onClick={() => {
+                if (!midiEnabled) setMidiEnabled(true);
+                toggleLearn();
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded transition-all text-[9px] tracking-[2px] uppercase"
+              style={{
+                border: `1px solid ${
+                  learnMode
+                    ? "var(--color-studio-gold)"
+                    : "rgba(212,168,67,0.2)"
+                }`,
+                background: learnMode
+                  ? "rgba(212,168,67,0.08)"
+                  : "rgba(26,15,10,0.7)",
+                color: learnMode
+                  ? "var(--color-studio-gold)"
+                  : "rgba(212,168,67,0.4)",
+              }}
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: learnMode
+                    ? "var(--color-amber-glow)"
+                    : midiConnected
+                    ? "#4CAF50"
+                    : "#666",
+                  boxShadow: learnMode
+                    ? "0 0 8px rgba(232,155,46,0.6)"
+                    : midiConnected
+                    ? "0 0 6px rgba(76,175,80,0.5)"
+                    : "none",
+                  animation: learnMode
+                    ? "midiPulse 1s ease-in-out infinite"
+                    : "none",
+                }}
+              />
+              MIDI
+            </button>
+          )}
+        </div>
+      )}
       {isLive && (
         <div className="fixed top-3 right-4 z-[100] flex items-center gap-1.5 text-[9px] tracking-[2px] uppercase">
           <div
@@ -673,6 +740,7 @@ export default function VotePage() {
             onScoresChange={handleScoresChange}
             disabled={!isLive || !connected || !votingOpen || !contestant}
             viewerScores={viewerScores}
+            onScoreRef={faderConsoleRef}
           >
             {/* Boolean Votes — rendered inside FaderConsole area */}
             {isLive && contestant && (
@@ -723,6 +791,29 @@ export default function VotePage() {
             </div>
           )}
         </div>
+
+        {/* MIDI Panel — visible when learn mode is active */}
+        {isLive && midiEnabled && learnMode && (
+          <div className="mt-4">
+            <MidiPanel
+              learnMode={learnMode}
+              learnTarget={learnTarget}
+              mappings={midiMappings}
+              metrics={[
+                { key: "lowEnd", label: "Low End" },
+                { key: "clarity", label: "Clarity" },
+                { key: "balance", label: "Balance" },
+                { key: "midRange", label: "Mid Range" },
+                { key: "image", label: "Image" },
+                { key: "highEnd", label: "High End" },
+                { key: "overall", label: "Overall" },
+              ]}
+              onToggleLearn={toggleLearn}
+              onClearMapping={clearMapping}
+              connected={midiConnected}
+            />
+          </div>
+        )}
 
         {/* Leaderboard — hidden for now */}
         {/* {isLive && <Leaderboard entries={leaderboard} />} */}
