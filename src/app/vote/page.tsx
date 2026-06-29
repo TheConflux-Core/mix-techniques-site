@@ -75,17 +75,24 @@ export default function VotePage() {
 
   // Judge mode detection
   const [isJudge, setIsJudge] = useState(false);
+  const [judgeReady, setJudgeReady] = useState(!user); // true immediately for anonymous, false until check completes
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
-    supabase
-      .from("profiles")
-      .select("is_judge")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("is_judge")
+          .eq("id", user.id)
+          .single();
         if (data?.is_judge) setIsJudge(true);
-      });
+      } catch {
+        // ignore — unlock voting regardless
+      } finally {
+        setJudgeReady(true);
+      }
+    })();
   }, [user]);
   const [toast, setToast] = useState<{
     text: string;
@@ -212,7 +219,7 @@ export default function VotePage() {
       setCurrentScores(_scores);
       setCurrentAvg(avg);
 
-      if (!connected || !contestant?.name) return;
+      if (!connected || !contestant?.name || !judgeReady) return;
 
       const now = Date.now();
       if (now - lastSentRef.current < 100) return;
@@ -233,7 +240,7 @@ export default function VotePage() {
         total: +avg.toFixed(2),
       });
     },
-    [connected, contestant, user, sendMessage, isJudge]
+    [connected, contestant, user, sendMessage, isJudge, judgeReady]
   );
 
   // ─── Toast UI ──────────────────────────────────────────────────
