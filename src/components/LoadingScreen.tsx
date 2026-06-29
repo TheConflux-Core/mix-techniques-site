@@ -19,35 +19,18 @@ export default function LoadingScreen() {
 
   return (
     <div className={`loading-screen ${fadeOut ? "fade-out" : ""}`}>
-      {/* Animated "M" waveform logo */}
-      <svg
-        width="80"
-        height="60"
-        viewBox="0 0 80 60"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+      {/* Logo */}
+      <img
+        src="/logo-gold.png"
+        alt="Mix Techniques"
         className="mb-6"
-      >
-        <path
-          className="loading-m-path"
-          d="M5 55 L5 10 L20 35 L35 10 L40 10 L40 55"
-          stroke="#D4A843"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-        <path
-          className="loading-m-path"
-          d="M45 55 L45 10 L60 35 L75 10"
-          stroke="#D4A843"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-          style={{ animationDelay: "0.2s" }}
-        />
-      </svg>
+        style={{
+          width: "120px",
+          height: "auto",
+          opacity: 0,
+          animation: "fadeIn 0.8s ease-out 0.2s forwards",
+        }}
+      />
 
       {/* Title */}
       <h1 className="loading-title font-[family-name:var(--font-display)] text-[#F0E6D3] text-xl md:text-2xl uppercase tracking-[0.2em] font-bold">

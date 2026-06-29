@@ -53,6 +53,8 @@ export default function SubmissionForm() {
   const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
   const [currentEpisode, setCurrentEpisode] = useState<{ id: string; episode_number: number; title: string; description: string | null } | null>(null);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [broadcastRelease, setBroadcastRelease] = useState(false);
+  const [likenessRelease, setLikenessRelease] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -151,6 +153,7 @@ export default function SubmissionForm() {
     if (!form.genre) { newErrors.genre = "Genre is required"; newShaking.add("genre"); }
     if (!form.trackTitle.trim()) { newErrors.trackTitle = "Track title is required"; newShaking.add("trackTitle"); }
     if (!file) { newErrors.file = "Audio file is required"; newShaking.add("file"); }
+    if (!broadcastRelease || !likenessRelease) { newErrors.releases = "You must accept both release forms to submit."; }
     setErrors(newErrors);
     setShakingFields(newShaking);
     // Clear shake after animation
@@ -201,6 +204,9 @@ export default function SubmissionForm() {
           file_format: ext,
           duration: duration,
           episode_id: currentEpisode?.id || null,
+          broadcast_release_accepted: broadcastRelease,
+          likeness_release_accepted: likenessRelease,
+          release_timestamp: new Date().toISOString(),
         }),
       });
       if (!res.ok) {
@@ -545,6 +551,61 @@ export default function SubmissionForm() {
           </div>
         </div>
       )}
+
+      {/* Release Form Checkboxes */}
+      <div className="space-y-3 pt-2">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative mt-0.5">
+            <input
+              type="checkbox"
+              checked={broadcastRelease}
+              onChange={(e) => setBroadcastRelease(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-5 h-5 rounded border border-[#3A2818] bg-[#0F0A07] peer-checked:bg-[#D4A843] peer-checked:border-[#D4A843] transition-all duration-200 flex items-center justify-center">
+              {broadcastRelease && (
+                <svg className="w-3 h-3 text-[#1A0F0A]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/50 text-xs leading-relaxed">
+            I agree to the{" "}
+            <Link href="/legal/release" target="_blank" className="text-[#D4A843] hover:text-[#E89B2E] transition-colors underline underline-offset-2">
+              Broadcast Release
+            </Link>{" "}
+            (audio + likeness)
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative mt-0.5">
+            <input
+              type="checkbox"
+              checked={likenessRelease}
+              onChange={(e) => setLikenessRelease(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-5 h-5 rounded border border-[#3A2818] bg-[#0F0A07] peer-checked:bg-[#D4A843] peer-checked:border-[#D4A843] transition-all duration-200 flex items-center justify-center">
+              {likenessRelease && (
+                <svg className="w-3 h-3 text-[#1A0F0A]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/50 text-xs leading-relaxed">
+            I agree to the{" "}
+            <Link href="/legal/release" target="_blank" className="text-[#D4A843] hover:text-[#E89B2E] transition-colors underline underline-offset-2">
+              Likeness Release
+            </Link>{" "}
+            (name / bio / handles)
+          </span>
+        </label>
+
+        {errors.releases && <p className="text-[#C4392A] text-xs font-[family-name:var(--font-mono)]">{errors.releases}</p>}
+      </div>
 
       {/* Submit Button — Big, Gold, 3D */}
       <button

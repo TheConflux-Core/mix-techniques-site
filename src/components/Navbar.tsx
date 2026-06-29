@@ -12,8 +12,9 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link
           href="/"
-          className="font-[family-name:var(--font-display)] text-[#F0E6D3] text-xl md:text-2xl tracking-[0.2em] uppercase font-bold link-shimmer"
+          className="flex items-center gap-3 font-[family-name:var(--font-display)] text-[#F0E6D3] text-xl md:text-2xl tracking-[0.2em] uppercase font-bold link-shimmer"
         >
+          <img src="/logo-gold.png" alt="" className="w-8 h-8 object-contain" />
           MIX <span style={{ color: "#D4A843" }}>TECHNIQUES</span>
         </Link>
         <div className="flex items-center gap-8">

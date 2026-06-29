@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import SubmissionForm from "@/components/SubmissionForm";
+import BackstageRequirementsModal from "@/components/BackstageRequirementsModal";
 
 export default function SubmitPage() {
   const { user, loading } = useAuth();
@@ -32,6 +33,8 @@ export default function SubmitPage() {
 
   return (
     <div className="flex flex-col min-h-screen page-enter">
+      <BackstageRequirementsModal />
+
       {/* Carbon fiber background */}
       <div className="fixed inset-0 carbon-fiber pointer-events-none" />
       {/* Warm light ambience */}
