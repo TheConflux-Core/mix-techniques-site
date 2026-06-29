@@ -72,6 +72,21 @@ export default function VotePage() {
   );
   const [currentAvg, setCurrentAvg] = useState(7);
   const lastSentRef = useRef(0);
+
+  // Judge mode detection
+  const [isJudge, setIsJudge] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+    supabase
+      .from("profiles")
+      .select("is_judge")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.is_judge) setIsJudge(true);
+      });
+  }, [user]);
   const [toast, setToast] = useState<{
     text: string;
     type: "ok" | "err";
@@ -208,7 +223,9 @@ export default function VotePage() {
         user?.email?.split("@")[0] ||
         "Anonymous";
 
-      sendMessage("viewer-vote", {
+      const voteType = isJudge ? "judge-vote" : "viewer-vote";
+
+      sendMessage(voteType, {
         viewer: `user_${user?.id}`,
         displayName,
         contestant: contestant.name,
@@ -216,7 +233,7 @@ export default function VotePage() {
         total: +avg.toFixed(2),
       });
     },
-    [connected, contestant, user, sendMessage]
+    [connected, contestant, user, sendMessage, isJudge]
   );
 
   // ─── Toast UI ──────────────────────────────────────────────────
@@ -265,6 +282,26 @@ export default function VotePage() {
         MIX{" "}
         <span style={{ color: "var(--color-studio-gold)" }}>TECHNIQUES</span>
       </h1>
+      {isJudge && (
+        <div
+          className="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded"
+          style={{
+            background: "linear-gradient(135deg, rgba(212,168,67,0.15), rgba(232,155,46,0.08))",
+            border: "1px solid rgba(212,168,67,0.3)",
+            boxShadow: "0 0 15px rgba(212,168,67,0.12)",
+          }}
+        >
+          <svg className="w-4 h-4" style={{ color: "var(--color-studio-gold)" }} fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          <span
+            className="font-[family-name:var(--font-mono)] text-xs tracking-[3px] uppercase font-bold"
+            style={{ color: "var(--color-studio-gold)" }}
+          >
+            Judge Mode
+          </span>
+        </div>
+      )}
       <div
         className="w-full h-px mt-4"
         style={{

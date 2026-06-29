@@ -168,6 +168,10 @@ export function useVoteSocket(serverUrl: string) {
         }
         break;
       }
+      case "judge-score-update": {
+        // Judge scores handled by caller via onJudgeScoreUpdate callback
+        break;
+      }
       case "voting-open":
         setVotingOpen(true);
         break;
