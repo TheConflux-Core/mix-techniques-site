@@ -14,6 +14,7 @@ interface FormData {
   location: string;
   genre: string;
   trackTitle: string;
+  discordHandle: string;
   socialLinks: {
     instagram: string;
     twitter: string;
@@ -37,6 +38,7 @@ export default function SubmissionForm() {
     location: "",
     genre: "",
     trackTitle: "",
+    discordHandle: "",
     socialLinks: { instagram: "", twitter: "", tiktok: "", youtube: "", soundcloud: "" },
   });
   const [file, setFile] = useState<File | null>(null);
@@ -198,6 +200,7 @@ export default function SubmissionForm() {
           location: form.location || null,
           genre: form.genre,
           track_title: form.trackTitle,
+          discord_handle: form.discordHandle?.trim() || null,
           social_links: form.socialLinks,
           track_url: storagePath,
           waveform_data: peaks,
@@ -412,6 +415,23 @@ export default function SubmissionForm() {
           className={getInputClasses("location")}
           placeholder="City, State/Country"
         />
+      </div>
+
+      {/* Discord Handle */}
+      <div>
+        <label className="block text-xs text-[#F0E6D3]/50 font-[family-name:var(--font-mono)] mb-2 uppercase tracking-[0.15em]">
+          Discord Username
+        </label>
+        <input
+          type="text"
+          value={form.discordHandle}
+          onChange={(e) => updateForm("discordHandle", e.target.value)}
+          className={getInputClasses("discordHandle")}
+          placeholder="@yourusername"
+        />
+        <p className="text-[#F0E6D3]/25 text-[10px] mt-1 font-[family-name:var(--font-mono)]">
+          Required if you want to be pulled on the live show
+        </p>
       </div>
 
       {/* Genre — Brass selector */}

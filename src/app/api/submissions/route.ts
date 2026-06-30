@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, location, genre, track_title, social_links, track_url, waveform_data, file_format, duration, episode_id } = body;
+    const { name, email, location, genre, track_title, discord_handle, social_links, track_url, waveform_data, file_format, duration, episode_id } = body;
 
     // Server-side validation
     if (!name?.trim()) {
@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
       email: email.trim(),
       location: location?.trim() || null,
       genre,
+      discord_handle: discord_handle?.trim() || null,
       social_links: social_links || {},
       track_url,
       track_title: track_title?.trim() || null,
@@ -141,6 +142,24 @@ export async function POST(request: NextRequest) {
         { error: `Failed to save submission: ${insertError.message}` },
         { status: 500 }
       );
+    }
+
+    // Notify Discord bot (non-blocking)
+    if (submission?.discord_handle) {
+      const botUrl = process.env.DISCORD_BOT_URL;
+      if (botUrl) {
+        fetch(`${botUrl}/api/submission-received`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: submission.name,
+            discord_handle: submission.discord_handle,
+            track_title: submission.track_title,
+            episode_id: submission.episode_id,
+            submission_id: submission.id,
+          }),
+        }).catch(() => {}); // Don't block on bot failure
+      }
     }
 
     return NextResponse.json(submission, { status: 201 });
