@@ -7,6 +7,7 @@ export interface Profile {
   genre: string | null;
   website: string | null;
   social_links: SocialLinks;
+  discord_handle: string | null;
   email?: string;
   role: string;
   created_at: string;

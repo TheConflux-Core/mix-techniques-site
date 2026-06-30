@@ -144,6 +144,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sync discord_handle back to user's profile (non-blocking)
+    if (submission?.discord_handle && session?.user?.id) {
+      db.from("profiles")
+        .update({ discord_handle: submission.discord_handle.trim() })
+        .eq("id", session.user.id)
+        .then(() => {}, () => {});
+    }
+
     // Notify Discord bot (non-blocking)
     if (submission?.discord_handle) {
       const botUrl = process.env.DISCORD_BOT_URL;

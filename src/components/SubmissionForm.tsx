@@ -265,7 +265,7 @@ export default function SubmissionForm() {
     // Fetch profile for slug + auto-fill fields
     supabase
       .from("profiles")
-      .select("display_name, location, genre, social_links")
+      .select("display_name, location, genre, social_links, discord_handle")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
@@ -276,6 +276,7 @@ export default function SubmissionForm() {
           name: prev.name || data.display_name || displayName,
           location: prev.location || data.location || "",
           genre: prev.genre || data.genre || "",
+          discordHandle: prev.discordHandle || data.discord_handle || "",
           socialLinks: {
             instagram: prev.socialLinks.instagram || data.social_links?.instagram || "",
             twitter: prev.socialLinks.twitter || data.social_links?.twitter || "",

@@ -27,6 +27,7 @@ export default function EditProfilePage() {
     location: "",
     genre: "",
     website: "",
+    discord_handle: "",
     social_links: {
       instagram: "",
       twitter: "",
@@ -69,6 +70,7 @@ export default function EditProfilePage() {
         location: data.location || "",
         genre: data.genre || "",
         website: data.website || "",
+        discord_handle: data.discord_handle || "",
         social_links: data.social_links || {
           instagram: "",
           twitter: "",
@@ -162,6 +164,7 @@ export default function EditProfilePage() {
           location: form.location || null,
           genre: form.genre || null,
           website: form.website || null,
+          discord_handle: form.discord_handle?.trim() || null,
           social_links: form.social_links,
         })
         .eq("id", user.id);
@@ -352,6 +355,23 @@ export default function EditProfilePage() {
                 className={getInputClasses()}
                 placeholder="https://your-site.com"
               />
+            </div>
+
+            {/* Discord Handle */}
+            <div>
+              <label className="block text-xs text-[#F0E6D3]/50 font-[family-name:var(--font-mono)] mb-2 uppercase tracking-[0.15em]">
+                Discord Username
+              </label>
+              <input
+                type="text"
+                value={form.discord_handle}
+                onChange={(e) => setForm({ ...form, discord_handle: e.target.value })}
+                className={getInputClasses()}
+                placeholder="@yourusername"
+              />
+              <p className="text-[#F0E6D3]/25 text-[10px] mt-1 font-[family-name:var(--font-mono)]">
+                Used to DM you when pulled on the live show
+              </p>
             </div>
 
             {/* Social Links */}
