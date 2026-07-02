@@ -62,21 +62,19 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_period_end
 --
 -- Returns:
 --   'free'    - no active paid subscription, or subscription canceled/expired
---   'pro'     - active Pro
---   'studio'  - active Studio
+--   'pro'     - active Pro (\$15/mo)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION get_user_tier(p_user_id UUID)
 RETURNS VARCHAR(20) AS $$
 DECLARE
     v_tier VARCHAR(20);
-    v_status VARCHAR(20);
 BEGIN
     -- Pick the most recently updated active-or-trialing-or-past_due row.
     -- 'past_due' is included so a user with a single failed payment doesn't
     -- get downgraded to free until Stripe confirms the subscription is dead.
-    SELECT tier, status
-      INTO v_tier, v_status
+    SELECT tier
+      INTO v_tier
       FROM subscriptions
      WHERE user_id = p_user_id
        AND status IN ('active', 'trialing', 'past_due')
@@ -88,7 +86,7 @@ BEGIN
     END IF;
 
     -- Defensive: if the row somehow has a weird tier value, default to free
-    IF v_tier NOT IN ('free', 'pro', 'studio') THEN
+    IF v_tier NOT IN ('free', 'pro') THEN
         RETURN 'free';
     END IF;
 
@@ -97,11 +95,10 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 5. Companion helper: get_user_tier_strict()
+-- 5. Companion helper: is_paid_user()
 --
--- Same as get_user_tier but only returns pro/studio (never 'free').
--- Useful when you want a boolean "is this user paid?" check without an
--- explicit string comparison.
+-- Boolean "is this user on Pro?" check. Wraps get_user_tier() so API
+-- routes can do a one-liner without an explicit string comparison.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION is_paid_user(p_user_id UUID)
@@ -110,7 +107,7 @@ DECLARE
     v_tier VARCHAR(20);
 BEGIN
     v_tier := get_user_tier(p_user_id);
-    RETURN v_tier IN ('pro', 'studio');
+    RETURN v_tier = 'pro';
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
