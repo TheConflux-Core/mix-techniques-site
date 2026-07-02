@@ -24,12 +24,8 @@ export async function GET(
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
 
-    // Increment view count (fire-and-forget)
-    supabase
-      .from("classifieds")
-      .update({ view_count: (listing.view_count ?? 0) + 1 })
-      .eq("id", id)
-      .then(() => {});
+    // Increment view count atomically (fire-and-forget)
+    supabase.rpc("increment_classified_view_count", { classified_id: id }).then(() => {});
 
     // Fetch review stats
     const { data: reviews } = await supabase

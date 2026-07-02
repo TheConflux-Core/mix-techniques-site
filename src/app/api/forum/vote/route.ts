@@ -95,25 +95,17 @@ export async function POST(request: NextRequest) {
       action = "created";
     }
 
-    // Recalculate vote_score on the target
-    const { data: votes } = await supabase
-      .from("forum_votes")
-      .select("vote_type")
-      .eq("target_id", target_id)
-      .eq("target_type", target_type);
-
-    const newScore = (votes ?? []).reduce((sum: number, v: any) => sum + v.vote_type, 0);
+    // vote_score is updated by DB trigger — fetch the current score for the response
     const tableName = target_type === "thread" ? "forum_threads" : "forum_replies";
-
-    supabase
+    const { data: target } = await supabase
       .from(tableName)
-      .update({ vote_score: newScore })
+      .select("vote_score")
       .eq("id", target_id)
-      .then(() => {});
+      .single();
 
     return NextResponse.json({
       vote_type: newVoteType,
-      vote_score: newScore,
+      vote_score: target?.vote_score ?? 0,
       action,
     });
   } catch (err: any) {
@@ -160,23 +152,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Recalculate vote_score
-    const { data: votes } = await supabase
-      .from("forum_votes")
-      .select("vote_type")
-      .eq("target_id", target_id)
-      .eq("target_type", target_type);
-
-    const newScore = (votes ?? []).reduce((sum: number, v: any) => sum + v.vote_type, 0);
+    // vote_score is updated by DB trigger — fetch current score for response
     const tableName = target_type === "thread" ? "forum_threads" : "forum_replies";
-
-    supabase
+    const { data: target } = await supabase
       .from(tableName)
-      .update({ vote_score: newScore })
+      .select("vote_score")
       .eq("id", target_id)
-      .then(() => {});
+      .single();
 
-    return NextResponse.json({ vote_type: null, vote_score: newScore, action: "removed" });
+    return NextResponse.json({ vote_type: null, vote_score: target?.vote_score ?? 0, action: "removed" });
   } catch (err: any) {
     console.error("Forum vote DELETE error:", err?.message || err);
     return NextResponse.json(

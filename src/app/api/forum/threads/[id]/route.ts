@@ -30,12 +30,8 @@ export async function GET(
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
-    // Increment view count (fire-and-forget)
-    supabase
-      .from("forum_threads")
-      .update({ view_count: (thread.view_count ?? 0) + 1 })
-      .eq("id", id)
-      .then(() => {});
+    // Increment view count atomically (fire-and-forget)
+    supabase.rpc("increment_thread_view_count", { thread_id: id }).then(() => {});
 
     // Get user's vote on this thread
     let userVote: number | null = null;
@@ -124,6 +120,10 @@ export async function PUT(
 
     if (body.is_locked !== undefined) {
       updates.is_locked = body.is_locked;
+    }
+
+    if (body.is_solved !== undefined) {
+      updates.is_solved = body.is_solved;
     }
 
     if (Object.keys(updates).length === 0) {

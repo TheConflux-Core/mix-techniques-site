@@ -109,20 +109,7 @@ export async function DELETE(
       );
     }
 
-    // Decrement reply_count on the thread (best-effort)
-    const { data: thread } = await supabase
-      .from("forum_threads")
-      .select("reply_count")
-      .eq("id", reply.thread_id)
-      .single();
-
-    if (thread && thread.reply_count > 0) {
-      supabase
-        .from("forum_threads")
-        .update({ reply_count: thread.reply_count - 1 })
-        .eq("id", reply.thread_id)
-        .then(() => {});
-    }
+    // reply_count decrement is handled by DB trigger
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -66,12 +66,7 @@ export async function POST(
       );
     }
 
-    // Increment contact_count (fire-and-forget)
-    supabase
-      .from("classifieds")
-      .update({ contact_count: (listing as any).contact_count ?? 0 + 1 })
-      .eq("id", listingId)
-      .then(() => {});
+    // contact_count is incremented by DB trigger
 
     return NextResponse.json(contact, { status: 201 });
   } catch (err: any) {

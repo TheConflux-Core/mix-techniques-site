@@ -152,7 +152,7 @@ export async function POST(
       );
     }
 
-    // Update thread's reply_count and last_reply_at (fire-and-forget)
+    // Update last_reply_at and last_reply_by (reply_count is handled by DB trigger)
     supabase
       .from("forum_threads")
       .update({
@@ -161,21 +161,6 @@ export async function POST(
       })
       .eq("id", threadId)
       .then(() => {});
-
-    // Increment reply_count via RPC or manual update
-    const { data: currentThread } = await supabase
-      .from("forum_threads")
-      .select("reply_count")
-      .eq("id", threadId)
-      .single();
-
-    if (currentThread) {
-      supabase
-        .from("forum_threads")
-        .update({ reply_count: (currentThread.reply_count ?? 0) + 1 })
-        .eq("id", threadId)
-        .then(() => {});
-    }
 
     return NextResponse.json(reply, { status: 201 });
   } catch (err: any) {

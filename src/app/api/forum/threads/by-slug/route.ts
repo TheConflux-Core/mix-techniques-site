@@ -50,12 +50,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
-    // Increment view count (fire-and-forget)
-    supabase
-      .from("forum_threads")
-      .update({ view_count: (thread.view_count ?? 0) + 1 })
-      .eq("id", thread.id)
-      .then(() => {});
+    // Increment view count atomically (fire-and-forget)
+    supabase.rpc("increment_thread_view_count", { thread_id: thread.id }).then(() => {});
 
     // Get user's vote on this thread
     let userVote: number | null = null;

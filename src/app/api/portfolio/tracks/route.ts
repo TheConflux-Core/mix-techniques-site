@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       title: title || file.name.replace(/\.[^/.]+$/, ""),
       description: description || null,
       genre: genre || null,
-      role: role || "mix_engineer",
+      role: role || "mixed",
       audio_url: urlData.publicUrl,
       waveform_peaks: peaks,
       duration_seconds: null, // Could be computed client-side
