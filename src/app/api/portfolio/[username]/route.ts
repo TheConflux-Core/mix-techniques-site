@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 
 export async function GET(
   request: NextRequest,
@@ -29,15 +30,8 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Check subscription tier
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("tier, status")
-    .eq("user_id", profile.id)
-    .eq("status", "active")
-    .single();
-
-  const tier = subscription?.tier || "free";
+  // Check subscription tier (via RPC — handles trialing + past_due correctly)
+  const tier = await getUserTier(supabase, profile.id);
 
   if (tier === "free") {
     return NextResponse.json({

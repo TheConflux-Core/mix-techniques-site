@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 
 export async function GET() {
   const supabase = await createClient();
@@ -31,15 +32,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check subscription tier
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("tier, status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .single();
-
-  const tier = subscription?.tier || "free";
+  // Check subscription tier (via RPC — handles trialing + past_due correctly)
+  const tier = await getUserTier(supabase, user.id);
 
   if (tier === "free") {
     return NextResponse.json(

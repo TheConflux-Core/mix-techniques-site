@@ -55,9 +55,9 @@ export default function PortfolioEditPage() {
         router.push("/"); return;
       }
 
-      const { data: sub } = await supabase
-        .from("subscriptions").select("tier, status").eq("user_id", user!.id).eq("status", "active").single();
-      setTier((sub?.tier as SubscriptionTier) || "free");
+      const { data: tierData } = await supabase
+        .rpc("get_user_tier", { p_user_id: user!.id });
+      setTier((tierData as SubscriptionTier) || "free");
 
       const { data: s } = await supabase
         .from("portfolio_settings").select("*").eq("user_id", user!.id).single();

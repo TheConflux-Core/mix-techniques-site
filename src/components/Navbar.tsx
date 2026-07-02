@@ -42,6 +42,12 @@ export default function Navbar() {
           >
             Classifieds
           </Link>
+          <Link
+            href="/pricing"
+            className="nav-link font-[family-name:var(--font-mono)] text-sm text-[#F0E6D3]/50 hover:text-[#D4A843] transition-colors tracking-wider"
+          >
+            Pricing
+          </Link>
 
           {!loading && (
             <>

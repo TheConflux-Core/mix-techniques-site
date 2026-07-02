@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 
 export async function GET() {
   const supabase = await createClient();
@@ -9,15 +10,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check studio tier
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("tier, status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .single();
+  // Check studio tier (via RPC — handles trialing + past_due correctly)
+  const tier = await getUserTier(supabase, user.id);
 
-  if (subscription?.tier !== "studio") {
+  if (tier !== "studio") {
     return NextResponse.json(
       { error: "Studio subscription required" },
       { status: 403 }

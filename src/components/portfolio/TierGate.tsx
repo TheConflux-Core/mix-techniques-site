@@ -29,14 +29,12 @@ export default function TierGate({ requiredTier, children, fallback = null }: Ti
       return;
     }
 
+    // RPC handles trialing + past_due correctly. Single source of truth.
     supabase
-      .from("subscriptions")
-      .select("tier, status")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .single()
+      .rpc("get_user_tier", { p_user_id: user.id })
       .then(({ data }) => {
-        setTier((data?.tier as SubscriptionTier) || "free");
+        const t = (data as SubscriptionTier) || "free";
+        setTier(t);
         setLoading(false);
       });
   }, [user]);

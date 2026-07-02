@@ -32,10 +32,10 @@ export default function DashboardPortfolioPage() {
         setProfileSlug(slug);
       }
 
-      // Get tier
-      const { data: sub } = await supabase
-        .from("subscriptions").select("tier, status").eq("user_id", user!.id).eq("status", "active").single();
-      setTier((sub?.tier as SubscriptionTier) || "free");
+      // Get tier via RPC (handles trialing + past_due correctly)
+      const { data: tierData } = await supabase
+        .rpc("get_user_tier", { p_user_id: user!.id });
+      setTier((tierData as SubscriptionTier) || "free");
 
       // Get tracks
       const { data: t } = await supabase
