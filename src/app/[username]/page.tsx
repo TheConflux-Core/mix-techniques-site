@@ -9,6 +9,9 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import SubmissionList from "@/components/profile/SubmissionList";
 import OwnerSubmissions from "@/components/profile/OwnerSubmissions";
 import ScheduleSection from "@/components/profile/ScheduleSection";
+import { SubscriptionTier, PortfolioSettings, PortfolioTrack } from "@/lib/types";
+import WaveformPlayer from "@/components/portfolio/WaveformPlayer";
+import PortfolioBadge from "@/components/portfolio/PortfolioBadge";
 
 export default function ProfilePage() {
   const params = useParams();
@@ -18,6 +21,9 @@ export default function ProfilePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [portfolioTier, setPortfolioTier] = useState<SubscriptionTier>("free");
+  const [portfolioSettings, setPortfolioSettings] = useState<PortfolioSettings | null>(null);
+  const [portfolioTracks, setPortfolioTracks] = useState<PortfolioTrack[]>([]);
   const supabase = createClient();
 
   const username = decodeURIComponent(params.username as string);
@@ -74,6 +80,18 @@ export default function ProfilePage() {
         : { data: [] };
 
       setSubmissions(subs || []);
+
+      // Fetch portfolio data
+      try {
+        const pRes = await fetch(`/api/portfolio/${encodeURIComponent(username)}`);
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          setPortfolioTier(pData.tier || "free");
+          setPortfolioSettings(pData.settings || null);
+          setPortfolioTracks(pData.tracks || []);
+        }
+      } catch {}
+
       setLoading(false);
     }
 
@@ -161,6 +179,88 @@ export default function ProfilePage() {
             </h2>
             <ScheduleSection submissions={submissions} />
           </div>
+        )}
+
+        {/* Portfolio Section — Pro/Studio only */}
+        {portfolioTier !== "free" && portfolioSettings && (
+          <>
+            {/* Badge + Link */}
+            <div className="card-float noise carbon-fiber-walnut rounded-2xl p-6 mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <PortfolioBadge tier={portfolioTier} size="md" />
+                  {portfolioSettings.headline && (
+                    <span className="font-[family-name:var(--font-display)] text-sm text-[#D4A843]/80 italic">
+                      {portfolioSettings.headline}
+                    </span>
+                  )}
+                </div>
+                <a
+                  href={`/${username}/portfolio`}
+                  className="btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.15em] px-5 py-2 rounded-lg font-bold"
+                >
+                  🎧 View Full Portfolio
+                </a>
+              </div>
+            </div>
+
+            {/* Featured Tracks Preview */}
+            {portfolioTracks.length > 0 && (
+              <div className="card-float noise carbon-fiber-walnut rounded-2xl p-8 mb-8">
+                <h2 className="font-[family-name:var(--font-display)] text-xl text-[#F0E6D3] uppercase tracking-wider mb-6 heading-wave">
+                  Portfolio Tracks
+                </h2>
+                <div className="space-y-3">
+                  {portfolioTracks
+                    .filter((t) => t.is_featured)
+                    .slice(0, 3)
+                    .map((track) => (
+                      <div key={track.id} className="bg-[#1A0F0A]/60 border border-[#3A2818]/30 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] font-[family-name:var(--font-mono)] font-bold uppercase tracking-widest text-[#D4A843] bg-[#D4A843]/10 px-1.5 py-0.5 rounded">★ Featured</span>
+                          <h3 className="font-[family-name:var(--font-display)] text-sm text-[#F0E6D3]">{track.title}</h3>
+                        </div>
+                        <WaveformPlayer audioUrl={track.audio_url} peaks={track.waveform_peaks} title={track.title} compact />
+                      </div>
+                    ))}
+                </div>
+                {portfolioTracks.length > 3 && (
+                  <a
+                    href={`/${username}/portfolio`}
+                    className="block mt-4 text-center font-[family-name:var(--font-mono)] text-xs text-[#D4A843]/60 hover:text-[#D4A843] transition-colors"
+                  >
+                    View all {portfolioTracks.length} tracks →
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Testimonials Preview */}
+            {portfolioSettings.client_testimonials && portfolioSettings.client_testimonials.length > 0 && (
+              <div className="card-float noise carbon-fiber-walnut rounded-2xl p-8 mb-8">
+                <h2 className="font-[family-name:var(--font-display)] text-xl text-[#F0E6D3] uppercase tracking-wider mb-6 heading-wave">
+                  Testimonials
+                </h2>
+                <blockquote className="font-[family-name:var(--font-display)] text-base text-[#F0E6D3]/70 italic leading-relaxed">
+                  &ldquo;{portfolioSettings.client_testimonials[0].quote}&rdquo;
+                </blockquote>
+                <div className="mt-3">
+                  <span className="font-[family-name:var(--font-mono)] text-sm text-[#D4A843]">{portfolioSettings.client_testimonials[0].name}</span>
+                  {portfolioSettings.client_testimonials[0].project && (
+                    <span className="font-[family-name:var(--font-mono)] text-xs text-[#F0E6D3]/30 ml-2">— {portfolioSettings.client_testimonials[0].project}</span>
+                  )}
+                </div>
+                {portfolioSettings.client_testimonials.length > 1 && (
+                  <a
+                    href={`/${username}/portfolio`}
+                    className="block mt-4 font-[family-name:var(--font-mono)] text-xs text-[#D4A843]/60 hover:text-[#D4A843] transition-colors"
+                  >
+                    Read {portfolioSettings.client_testimonials.length} testimonials →
+                  </a>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

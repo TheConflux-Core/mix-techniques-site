@@ -30,6 +30,18 @@ export default function Navbar() {
           >
             Submit
           </Link>
+          <Link
+            href="/forum"
+            className="nav-link font-[family-name:var(--font-mono)] text-sm text-[#F0E6D3]/50 hover:text-[#D4A843] transition-colors tracking-wider"
+          >
+            Forum
+          </Link>
+          <Link
+            href="/classifieds"
+            className="nav-link font-[family-name:var(--font-mono)] text-sm text-[#F0E6D3]/50 hover:text-[#D4A843] transition-colors tracking-wider"
+          >
+            Classifieds
+          </Link>
 
           {!loading && (
             <>
