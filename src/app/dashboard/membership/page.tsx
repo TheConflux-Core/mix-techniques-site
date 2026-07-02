@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   description: "Manage your Mix Techniques subscription.",
 };
 
+// Force this page to render fresh on every navigation. Critical after
+// Stripe checkout — the user lands here from a redirect and we MUST see the
+// latest tier, not a cached SSR result from before the webhook fired.
+export const dynamic = "force-dynamic";
+
 export default async function MembershipPage({
   searchParams,
 }: {
@@ -39,6 +44,20 @@ export default async function MembershipPage({
   const checkoutSuccess = params.checkout === "success";
   const checkoutCancelled = params.checkout === "cancelled";
 
+  // Critical: the user landed here from a successful Stripe redirect. The
+  // webhook may not have fired yet (Stripe delivers webhooks async, ~1-3s
+  // after checkout.session.completed). If the page renders "Welcome to Pro"
+  // while our DB still says "free", we lie to the user.
+  //
+  // Truthful states on ?checkout=success:
+  //   - tier === "pro" + sub exists  -> webhook fired, you're in, welcome
+  //   - tier === "free" + no sub     -> webhook hasn't reached us yet, show processing
+  //
+  // We pass a derived flag rather than letting the client component
+  // make the decision from the tier alone — the parent has the URL context.
+  const welcomeReady = checkoutSuccess && tier === "pro" && Boolean(sub);
+  const showProcessing = checkoutSuccess && tier === "free";
+
   return (
     <div className="min-h-screen carbon-fiber relative">
       <div className="fixed inset-0 warm-light-bg pointer-events-none" />
@@ -53,7 +72,7 @@ export default async function MembershipPage({
           </h1>
         </div>
 
-        {checkoutSuccess && (
+        {welcomeReady && (
           <div className="mb-8 card-float noise carbon-fiber-walnut rounded-2xl p-6 border border-[#D4A843]/40">
             <div className="flex items-start gap-3">
               <div className="text-2xl">🎉</div>
@@ -63,7 +82,24 @@ export default async function MembershipPage({
                 </h2>
                 <p className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/60 text-sm">
                   Your subscription is active. Stripe will email you a receipt. Your portfolio
-                  will be live within a few seconds.
+                  is live at <Link href={`/${user.user_metadata?.display_name ? user.user_metadata.display_name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : "profile"}`} className="text-[#D4A843] hover:text-[#E89B2E]">/your-username</Link>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showProcessing && (
+          <div className="mb-8 card-float noise carbon-fiber-walnut rounded-2xl p-6 border border-[#D4A843]/40">
+            <div className="flex items-start gap-3">
+              <div className="text-2xl">⏳</div>
+              <div className="flex-1">
+                <h2 className="font-[family-name:var(--font-display)] text-lg text-[#F0E6D3] uppercase tracking-wider mb-1">
+                  Almost There
+                </h2>
+                <p className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/60 text-sm">
+                  Your payment went through. We're updating your account — this usually takes a
+                  few seconds. Refresh this page in a moment if it doesn't update automatically.
                 </p>
               </div>
             </div>

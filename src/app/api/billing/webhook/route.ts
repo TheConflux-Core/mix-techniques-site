@@ -79,8 +79,28 @@ async function resolveUserId(
 
 function tierFromStripePriceId(priceId: string | undefined): "pro" | null {
   if (!priceId) return null;
-  if (priceId === process.env.STRIPE_PRICE_ID_PRO) return "pro";
+  // Exact match against configured price id.
+  if (process.env.STRIPE_PRICE_ID_PRO && priceId === process.env.STRIPE_PRICE_ID_PRO) {
+    return "pro";
+  }
   return null;
+}
+
+/**
+ * Default tier fallback: we currently have exactly one paid product (Pro at
+ * $15/mo). If we can't match the price ID against STRIPE_PRICE_ID_PRO for
+ * any reason (env var missing on the server, new price created, price ID
+ * rotation), default to "pro" rather than silently dropping the user's
+ * subscription. This means a misconfiguration can't lock paid users out.
+ *
+ * If we ever add a second paid product, this MUST be replaced with a strict
+ * fail-loud path (return null, write nothing) instead.
+ */
+function defaultTierForUnknownPrice(priceId: string | undefined): "pro" {
+  console.warn(
+    `tierFromStripePriceId returned null for price id: ${priceId}. STRIPE_PRICE_ID_PRO=${process.env.STRIPE_PRICE_ID_PRO ?? "(unset)"}. Falling back to 'pro' because we have only one paid product.`
+  );
+  return "pro";
 }
 
 /**
@@ -212,15 +232,11 @@ export async function POST(request: NextRequest) {
 
         const item = subscription.items.data[0];
         const priceId = item?.price?.id;
-        const tier = tierFromStripePriceId(priceId);
+        let tier = tierFromStripePriceId(priceId);
         if (!tier) {
-          console.error(
-            "Unknown Stripe price id on subscription",
-            subscription.id,
-            "priceId:",
-            priceId
-          );
-          return NextResponse.json({ received: true, warning: "unknown price id" }, { status: 200 });
+          // Don't drop the user — fallback to 'pro' since we have one paid
+          // product. Log loudly so misconfigurations surface in Vercel logs.
+          tier = defaultTierForUnknownPrice(priceId);
         }
 
         const customerId =
