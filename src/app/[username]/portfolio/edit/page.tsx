@@ -155,9 +155,9 @@ export default function PortfolioEditPage() {
       <div className="card-float noise carbon-fiber-walnut rounded-2xl p-12 text-center max-w-md">
         <div className="text-5xl mb-4">🎛️</div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-[#F0E6D3] uppercase tracking-wider mb-4">Portfolio Editor</h1>
-        <p className="text-[#F0E6D3]/40 font-[family-name:var(--font-mono)] text-sm mb-6">Upgrade to Pro or Studio to unlock the portfolio editor.</p>
+        <p className="text-[#F0E6D3]/40 font-[family-name:var(--font-mono)] text-sm mb-6">Upgrade to Pro to unlock the portfolio editor.</p>
         <div className="bg-[#D4A843]/10 border border-[#D4A843]/20 rounded-xl p-4 mb-6">
-          <p className="text-[#D4A843] font-[family-name:var(--font-mono)] text-xs">For testing, add a row to the <code>subscriptions</code> table with your user_id and tier = &apos;pro&apos; or &apos;studio&apos;.</p>
+          <p className="text-[#D4A843] font-[family-name:var(--font-mono)] text-xs">For testing, add a row to the <code>subscriptions</code> table with your user_id and tier = &apos;pro&apos;.</p>
         </div>
         <a href={`/${username}`} className="btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.15em] px-8 py-3 rounded-lg font-bold inline-block">Back to Profile</a>
       </div>
@@ -197,7 +197,7 @@ export default function PortfolioEditPage() {
           <nav className="w-48 flex-shrink-0">
             <div className="card-float noise carbon-fiber-walnut rounded-xl p-2 space-y-1 sticky top-6">
               {tabs.map(tab => {
-                if (tab.id === "analytics" && tier !== "studio") return null;
+                if (tab.id === "analytics" && tier !== "pro") return null;
                 return (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                     className={`w-full text-left px-4 py-2.5 rounded-lg font-[family-name:var(--font-mono)] text-xs transition-all ${activeTab === tab.id ? "bg-[#D4A843]/10 text-[#D4A843] border border-[#D4A843]/20" : "text-[#F0E6D3]/40 hover:text-[#F0E6D3]/60 hover:bg-[#2A1810]/30 border border-transparent"}`}>
@@ -344,8 +344,8 @@ export default function PortfolioEditPage() {
                 </div>
               )}
 
-              {/* Analytics Tab (Studio only) */}
-              {activeTab === "analytics" && tier === "studio" && (
+              {/* Analytics Tab (Pro) */}
+              {activeTab === "analytics" && tier === "pro" && (
                 <div className="space-y-6">
                   <h2 className="font-[family-name:var(--font-display)] text-xl text-[#F0E6D3] uppercase tracking-wider heading-wave">Analytics</h2>
                   <AnalyticsDashboard />

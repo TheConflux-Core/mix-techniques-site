@@ -5,7 +5,7 @@ import { TIERS, getStripe, tierFromSubscription, isStripeConfigured } from "@/li
 /**
  * POST /api/billing/checkout
  *
- * Body: { tier: "pro" | "studio" }
+ * Body: { tier: "pro" }
  *
  * Creates a Stripe Checkout session in subscription mode. We attach the
  * authenticated user's email + Supabase user id to the session metadata so
@@ -38,10 +38,10 @@ export async function POST(request: NextRequest) {
     const userEmail = session.user.email || undefined;
 
     const body = await request.json().catch(() => ({}));
-    const requestedTier = body?.tier as "pro" | "studio" | undefined;
-    if (!requestedTier || (requestedTier !== "pro" && requestedTier !== "studio")) {
+    const requestedTier = body?.tier as "pro" | undefined;
+    if (!requestedTier || requestedTier !== "pro") {
       return NextResponse.json(
-        { error: "Invalid tier. Must be 'pro' or 'studio'." },
+        { error: "Invalid tier. Must be 'pro'." },
         { status: 400 }
       );
     }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     if (existingSub?.stripe_customer_id) {
       const currentTier = tierFromSubscription(existingSub);
-      if (currentTier === requestedTier || currentTier === "studio") {
+      if (currentTier === requestedTier) {
         return NextResponse.json(
           {
             error: "You already have an active subscription. Use the customer portal to manage it.",

@@ -59,7 +59,7 @@ export default async function MembershipPage({
               <div className="text-2xl">🎉</div>
               <div>
                 <h2 className="font-[family-name:var(--font-display)] text-lg text-[#F0E6D3] uppercase tracking-wider mb-1">
-                  Welcome to {tier === "studio" ? "Studio" : "Pro"}
+                  Welcome to Pro
                 </h2>
                 <p className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/60 text-sm">
                   Your subscription is active. Stripe will email you a receipt. Your portfolio

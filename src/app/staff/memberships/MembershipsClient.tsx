@@ -45,7 +45,7 @@ export default function MembershipsClient({
     );
   });
 
-  async function setTier(userId: string, tier: "free" | "pro" | "studio") {
+  async function setTier(userId: string, tier: "free" | "pro") {
     setError("");
     setSuccess("");
     setBusyId(userId);
@@ -149,11 +149,9 @@ export default function MembershipsClient({
                       className="font-[family-name:var(--font-display)] text-sm uppercase tracking-wider"
                       style={{
                         color:
-                          row.tier === "studio"
-                            ? "#E89B2E"
-                            : row.tier === "pro"
-                              ? "#D4A843"
-                              : "#F0E6D3/60",
+                          row.tier === "pro"
+                            ? "#D4A843"
+                            : "#F0E6D3",
                       }}
                     >
                       {row.tier}
@@ -177,7 +175,7 @@ export default function MembershipsClient({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-1 justify-end">
-                      {(["free", "pro", "studio"] as const).map((t) => (
+                      {(["free", "pro"] as const).map((t) => (
                         <button
                           key={t}
                           onClick={() => setTier(row.user_id, t)}

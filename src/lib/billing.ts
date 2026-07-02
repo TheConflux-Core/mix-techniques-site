@@ -1,9 +1,48 @@
 // Mix Techniques — Billing helpers
-// Single source of truth for Stripe price IDs, tier lookup, and feature gates.
+// Single source of truth for Stripe prices, tier lookup, and feature gates.
+//
+// Business model (decided 2026-07-02):
+//   - One subscription tier: $15/month, called "Pro"
+//   - Free tier: profile at /[username], submit mixes, vote, forum, classifieds
+//   - Pro: portfolio at /[username]/portfolio with up to MAX_TRACKS_PER_USER tracks
+//   - Track limit protects us from "unlimited storage" cost blowups. 3-5 mixes
+//     is enough to showcase someone's best engineering work — that's the
+//     product positioning.
+//   - Micro-transactions (featured listings, bumps) prepared for later, see
+//     src/lib/microtransactions.ts for the future-ready foundation.
 
 import Stripe from "stripe";
 
-export type Tier = "free" | "pro" | "studio";
+export type Tier = "free" | "pro";
+
+// ─── Limits & Pricing Constants ─────────────────────────────────────────────
+// Change here, not in API routes or DB.
+
+export const PRICING = {
+  proMonthly: 1500, // cents — $15.00
+  currency: "usd",
+} as const;
+
+// How many tracks a Pro user can have on their portfolio. Keeps storage costs
+// predictable and forces users to upload only their best work (which is the
+// product positioning — "your showcase of best engineering").
+export const MAX_TRACKS_PER_USER = 5;
+
+// Max file size per track (Pro). 50MB covers ~5 min of WAV at 44.1kHz/16-bit.
+export const MAX_TRACK_BYTES = 50 * 1024 * 1024;
+
+// Allowed audio formats — keep this small to prevent weird MIME gymnastics.
+export const ALLOWED_AUDIO_EXTS = ["wav", "flac", "mp3", "aiff"] as const;
+export const ALLOWED_AUDIO_MIME = [
+  "audio/wav",
+  "audio/x-wav",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/aiff",
+  "audio/x-aiff",
+] as const;
 
 export interface TierConfig {
   id: Tier;
@@ -11,8 +50,8 @@ export interface TierConfig {
   priceMonthly: number; // cents
   blurb: string;
   features: string[];
-  // Stripe price IDs — set via env at runtime. If missing, tier is "unbuyable"
-  // and the UI shows the "Manual upgrade" path instead.
+  // Stripe price ID — read from env at runtime. If missing, the checkout
+  // route returns 503 and the UI shows the manual upgrade path.
   stripePriceId: string | null;
 }
 
@@ -21,7 +60,8 @@ export const TIERS: Record<Tier, TierConfig> = {
     id: "free",
     name: "Free",
     priceMonthly: 0,
-    blurb: "Your profile is live. Submit mixes, vote, use the forum and classifieds.",
+    blurb:
+      "Your profile is live. Submit mixes, vote, talk shop in the forum, post classifieds.",
     features: [
       "Public profile at /[username]",
       "Submit mixes to episodes",
@@ -34,71 +74,58 @@ export const TIERS: Record<Tier, TierConfig> = {
   pro: {
     id: "pro",
     name: "Pro",
-    priceMonthly: 1000,
-    blurb: "A real portfolio. Custom waveform player, track uploads, themes, contact form.",
+    priceMonthly: PRICING.proMonthly,
+    blurb:
+      "A real portfolio you can hand to clients. Up to 5 tracks, audio player, custom layout.",
     features: [
       "Everything in Free",
-      "Portfolio at /[username]/portfolio",
-      "Audio waveform player + track uploads (up to 50MB)",
+      `Portfolio at /[username]/portfolio`,
+      `Up to ${MAX_TRACKS_PER_USER} audio tracks (WAV / FLAC / MP3 / AIFF)`,
+      "Custom waveform audio player",
       "Choose from 4 portfolio themes",
-      "Testimonials + gear list",
+      "Testimonials + gear/plugin list",
       "Contact form on your portfolio",
-      "Forum verified badge, no ads",
+      "Verified badge on forum + classifieds",
+      "No ads on forum",
     ],
     stripePriceId: process.env.STRIPE_PRICE_ID_PRO || null,
   },
-  studio: {
-    id: "studio",
-    name: "Studio",
-    priceMonthly: 2500,
-    blurb: "For working studios. Larger uploads, analytics dashboard, custom domains.",
-    features: [
-      "Everything in Pro",
-      "Track uploads up to 100MB (WAV / FLAC / AIFF)",
-      "Portfolio analytics dashboard",
-      "Featured portfolio placement (when discovery lands)",
-      "Priority on classifieds listings",
-      "Coming soon: custom domain support",
-    ],
-    stripePriceId: process.env.STRIPE_PRICE_ID_STUDIO || null,
-  },
 };
 
-export function getTierOrder(tier: Tier): number {
-  return { free: 0, pro: 1, studio: 2 }[tier];
-}
-
 export function isPaidTier(tier: Tier | null | undefined): boolean {
-  return tier === "pro" || tier === "studio";
+  return tier === "pro";
 }
 
 /**
- * Returns the highest active tier the user is entitled to based on their
- * subscription row. Handles multiple historical subscriptions by picking the
- * most recent active row.
+ * Returns the user's tier from a subscription row. Encodes the
+ * Stripe status → our tier mapping.
  *
- * Subscription status mapping:
  *   'active'    -> use tier as-is
  *   'trialing'  -> use tier as-is
- *   'past_due'  -> keep tier (don't downgrade on a failed payment — Stripe will retry)
+ *   'past_due'  -> keep tier (don't downgrade on a single failed payment — Stripe retries)
  *   'canceled', 'incomplete', 'incomplete_expired', 'unpaid' -> 'free'
+ *
+ * Note: there is exactly one paid tier now (pro), so tier can only be 'free'
+ * or 'pro'. The code accepts both for forward compat — if we ever add a
+ * second paid tier, the helper doesn't need to change.
  */
 export function tierFromSubscription(
   subscription: { tier: string; status: string } | null | undefined
 ): Tier {
   if (!subscription) return "free";
-  if (subscription.status !== "active" && subscription.status !== "trialing" && subscription.status !== "past_due") {
+  if (
+    subscription.status !== "active" &&
+    subscription.status !== "trialing" &&
+    subscription.status !== "past_due"
+  ) {
     return "free";
   }
-  const t = subscription.tier as Tier;
-  if (t === "pro" || t === "studio") return t;
-  return "free";
+  return subscription.tier === "pro" ? "pro" : "free";
 }
 
 // ─── Stripe singleton (server-only) ──────────────────────────────────────────
-// We use the Stripe Node SDK on the server. Webhook signature verification
-// requires the raw request body, so we instantiate per-request in the webhook
-// route. This export is for non-webhook routes (checkout, portal).
+// Used by all non-webhook routes (checkout, portal). The webhook route
+// instantiates its own client so signature verification works on the raw body.
 
 let stripeClient: Stripe | null = null;
 
@@ -116,8 +143,5 @@ export function getStripe(): Stripe {
 }
 
 export function isStripeConfigured(): boolean {
-  return Boolean(
-    process.env.STRIPE_SECRET_KEY &&
-      (process.env.STRIPE_PRICE_ID_PRO || process.env.STRIPE_PRICE_ID_STUDIO)
-  );
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID_PRO);
 }

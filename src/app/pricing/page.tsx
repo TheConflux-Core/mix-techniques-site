@@ -5,7 +5,7 @@ import { TIERS } from "@/lib/billing";
 
 export const metadata: Metadata = {
   title: "Pricing — Mix Techniques",
-  description: "Choose your membership tier. Pro and Studio unlock portfolio, audio uploads, and analytics.",
+  description: "Choose your membership tier. Pro unlocks portfolio, audio uploads, and analytics.",
 };
 
 export default function PricingPage() {
@@ -26,7 +26,7 @@ export default function PricingPage() {
           </h1>
           <p className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/50 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
             Free gets you in the door — profile, submissions, voting, forum, classifieds. Pro unlocks
-            a real portfolio. Studio is for working engineers who want analytics.
+            a real portfolio with up to 5 tracks, themes, and a contact form.
           </p>
         </div>
 

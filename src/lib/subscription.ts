@@ -9,7 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type Tier = "free" | "pro" | "studio";
+export type Tier = "free" | "pro";
 
 export async function getUserTier(
   supabase: SupabaseClient,
@@ -24,9 +24,7 @@ export async function getUserTier(
     return "free";
   }
 
-  const t = data as Tier | null;
-  if (t === "pro" || t === "studio") return t;
-  return "free";
+  return data === "pro" ? "pro" : "free";
 }
 
 export async function isPaidUser(
@@ -34,5 +32,5 @@ export async function isPaidUser(
   userId: string
 ): Promise<boolean> {
   const tier = await getUserTier(supabase, userId);
-  return tier === "pro" || tier === "studio";
+  return tier === "pro";
 }

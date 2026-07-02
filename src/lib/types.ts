@@ -257,7 +257,7 @@ export interface ClassifiedContact {
 // PORTFOLIO TYPES
 // ═══════════════════════════════════════════
 
-export type SubscriptionTier = 'free' | 'pro' | 'studio';
+export type SubscriptionTier = 'free' | 'pro';
 
 export interface Subscription {
   id: string;

@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest) {
 
   if (tier === "free") {
     return NextResponse.json(
-      { error: "Pro or Studio subscription required" },
+      { error: "Pro subscription required" },
       { status: 403 }
     );
   }
@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest) {
     }
   }
 
-  if (tier !== "studio" && updates.custom_domain) {
+  if (tier !== "pro" && updates.custom_domain) {
     delete updates.custom_domain;
   }
 

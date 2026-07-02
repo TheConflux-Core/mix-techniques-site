@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserTier } from "@/lib/subscription";
+import { MAX_TRACKS_PER_USER, MAX_TRACK_BYTES, ALLOWED_AUDIO_EXTS, ALLOWED_AUDIO_MIME } from "@/lib/billing";
 
 export async function GET() {
   const supabase = await createClient();
@@ -21,7 +22,11 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ tracks: tracks || [] });
+  return NextResponse.json({
+    tracks: tracks || [],
+    limit: MAX_TRACKS_PER_USER,
+    remaining: Math.max(0, MAX_TRACKS_PER_USER - (tracks?.length ?? 0)),
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -32,13 +37,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check subscription tier (via RPC — handles trialing + past_due correctly)
+  // Tier gate: Pro only (single paid tier — see src/lib/billing.ts)
   const tier = await getUserTier(supabase, user.id);
-
-  if (tier === "free") {
+  if (tier !== "pro") {
     return NextResponse.json(
-      { error: "Pro or Studio subscription required" },
+      { error: "Pro subscription required to upload tracks. Visit /pricing." },
       { status: 403 }
+    );
+  }
+
+  // Track count gate: enforced here AND by DB trigger (migration 012).
+  // We check here first so we can return a friendlier error than a Postgres
+  // exception that surfaces as a 500.
+  const { count: currentCount, error: countError } = await supabase
+    .from("portfolio_tracks")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if (countError) {
+    return NextResponse.json({ error: countError.message }, { status: 500 });
+  }
+
+  if ((currentCount ?? 0) >= MAX_TRACKS_PER_USER) {
+    return NextResponse.json(
+      {
+        error: `You've reached your portfolio limit of ${MAX_TRACKS_PER_USER} tracks. Delete one to upload another.`,
+        code: "track_limit_reached",
+        limit: MAX_TRACKS_PER_USER,
+      },
+      { status: 400 }
     );
   }
 
@@ -55,19 +82,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  // Validate file type
-  const allowedTypes = ["audio/wav", "audio/flac", "audio/mpeg", "audio/mp3", "audio/aiff", "audio/x-aiff"];
+  // Validate file type (constants from src/lib/billing.ts)
   const ext = file.name.split(".").pop()?.toLowerCase();
-  const allowedExts = ["wav", "flac", "mp3", "aiff"];
-  if (!allowedTypes.includes(file.type) && !allowedExts.includes(ext || "")) {
-    return NextResponse.json({ error: "Invalid file type. Allowed: WAV, FLAC, MP3, AIFF" }, { status: 400 });
+  if (
+    !ALLOWED_AUDIO_MIME.includes(file.type as any) &&
+    !(ext && (ALLOWED_AUDIO_EXTS as readonly string[]).includes(ext))
+  ) {
+    return NextResponse.json(
+      { error: `Invalid file type. Allowed: ${ALLOWED_AUDIO_EXTS.join(", ").toUpperCase()}` },
+      { status: 400 }
+    );
   }
 
   // Validate file size
-  const maxSize = tier === "studio" ? 100 * 1024 * 1024 : 50 * 1024 * 1024;
-  if (file.size > maxSize) {
+  if (file.size > MAX_TRACK_BYTES) {
     return NextResponse.json(
-      { error: `File too large. Max: ${tier === "studio" ? "100MB" : "50MB"}` },
+      { error: `File too large. Max: ${Math.round(MAX_TRACK_BYTES / 1024 / 1024)}MB` },
       { status: 400 }
     );
   }
@@ -98,7 +128,8 @@ export async function POST(request: NextRequest) {
     } catch {}
   }
 
-  // Get max sort_order
+  // Get max sort_order — race-safe: if a parallel insert wins, our nextOrder
+  // collides and Postgres rejects on UNIQUE. Acceptable: the user re-tries.
   const { data: existingTracks } = await supabase
     .from("portfolio_tracks")
     .select("sort_order")
@@ -108,7 +139,8 @@ export async function POST(request: NextRequest) {
 
   const nextOrder = (existingTracks?.[0]?.sort_order ?? -1) + 1;
 
-  // Insert track record
+  // Insert track record. The DB trigger (migration 012) will also enforce the
+  // tier + count limit as a backstop in case this check is bypassed.
   const { data: track, error: insertError } = await supabase
     .from("portfolio_tracks")
     .insert({
@@ -129,8 +161,25 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (insertError) {
+    // The DB trigger raises with these error messages — translate to friendly 400
+    if (
+      insertError.message?.includes("portfolio_track_limit_reached") ||
+      insertError.message?.includes("portfolio_tracks_forbidden")
+    ) {
+      return NextResponse.json(
+        {
+          error: insertError.message.replace(/^[a-z_]+:\s*/, ""),
+          code: "track_limit",
+        },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ track }, { status: 201 });
+  return NextResponse.json({
+    track,
+    limit: MAX_TRACKS_PER_USER,
+    remaining: Math.max(0, MAX_TRACKS_PER_USER - ((currentCount ?? 0) + 1)),
+  });
 }

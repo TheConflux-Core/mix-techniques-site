@@ -5,7 +5,7 @@ import { createClient as createSbClient } from "@supabase/supabase-js";
 /**
  * POST /api/staff/memberships/set-tier
  *
- * Body: { user_id: string, tier: "free" | "pro" | "studio" }
+ * Body: { user_id: string, tier: "free" | "pro" }
  *
  * Staff-only manual tier override. Used for testing + for upgrading users
  * by hand when Stripe isn't configured (or for promotional upgrades).
@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const userId = body?.user_id as string | undefined;
-    const tier = body?.tier as "free" | "pro" | "studio" | undefined;
+    const tier = body?.tier as "free" | "pro" | undefined;
 
     if (!userId) {
       return NextResponse.json({ error: "user_id required" }, { status: 400 });
     }
-    if (!tier || !["free", "pro", "studio"].includes(tier)) {
+    if (!tier || !["free", "pro"].includes(tier)) {
       return NextResponse.json(
-        { error: "tier must be 'free', 'pro', or 'studio'" },
+        { error: "tier must be 'free' or 'pro'" },
         { status: 400 }
       );
     }

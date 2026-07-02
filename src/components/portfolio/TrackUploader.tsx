@@ -158,7 +158,7 @@ export default function TrackUploader({ onUploadComplete, onError }: TrackUpload
           Drop audio files here or click to browse
         </p>
         <p className="text-[#F0E6D3]/30 font-[family-name:var(--font-mono)] text-xs">
-          WAV, FLAC, MP3, AIFF — Max 50MB (Pro) / 100MB (Studio)
+          WAV, FLAC, MP3, AIFF — Max 50MB
         </p>
         <input
           ref={fileInputRef}

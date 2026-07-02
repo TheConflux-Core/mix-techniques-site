@@ -14,11 +14,6 @@ const BADGE_CONFIG: Record<SubscriptionTier, { label: string; icon: string; colo
     icon: "🎧",
     colors: "bg-gradient-to-r from-[#D4A843] to-[#E89B2E] text-[#1A0F0A]",
   },
-  studio: {
-    label: "STUDIO",
-    icon: "🎛️",
-    colors: "bg-gradient-to-r from-[#8B6914] via-[#D4A843] to-[#8B6914] text-[#1A0F0A]",
-  },
 };
 
 export default function PortfolioBadge({ tier, size = "sm" }: PortfolioBadgeProps) {

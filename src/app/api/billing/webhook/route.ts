@@ -77,10 +77,9 @@ async function resolveUserId(
   return null;
 }
 
-function tierFromStripePriceId(priceId: string | undefined): "pro" | "studio" | null {
+function tierFromStripePriceId(priceId: string | undefined): "pro" | null {
   if (!priceId) return null;
   if (priceId === process.env.STRIPE_PRICE_ID_PRO) return "pro";
-  if (priceId === process.env.STRIPE_PRICE_ID_STUDIO) return "studio";
   return null;
 }
 
@@ -116,7 +115,7 @@ async function upsertSubscription(
     stripeSubscriptionId: string;
     stripeCustomerId: string;
     stripePriceId: string;
-    tier: "pro" | "studio";
+    tier: "pro";
     status: string;
     currentPeriodStart: Date | null;
     currentPeriodEnd: Date | null;

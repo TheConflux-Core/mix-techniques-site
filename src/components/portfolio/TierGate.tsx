@@ -14,7 +14,6 @@ interface TierGateProps {
 const TIER_LEVELS: Record<SubscriptionTier, number> = {
   free: 0,
   pro: 1,
-  studio: 2,
 };
 
 export default function TierGate({ requiredTier, children, fallback = null }: TierGateProps) {

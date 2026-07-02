@@ -10,12 +10,12 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check studio tier (via RPC — handles trialing + past_due correctly)
+  // Check Pro tier (single paid tier — see src/lib/billing.ts)
   const tier = await getUserTier(supabase, user.id);
 
-  if (tier !== "studio") {
+  if (tier !== "pro") {
     return NextResponse.json(
-      { error: "Studio subscription required" },
+      { error: "Pro subscription required" },
       { status: 403 }
     );
   }

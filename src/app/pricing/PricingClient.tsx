@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { MAX_TRACKS_PER_USER } from "@/lib/billing";
 
 interface TierConfig {
-  id: "free" | "pro" | "studio";
+  id: "free" | "pro";
   name: string;
   priceMonthly: number;
   blurb: string;
@@ -43,7 +44,7 @@ export default function PricingClient({ tiers }: { tiers: TierConfig[] }) {
       const data = await res.json();
 
       if (res.status === 503) {
-        // Stripe not configured — fall back to contact form
+        // Stripe not configured yet — fall back to email
         setError(
           "Online checkout is not configured yet. Email hello@mixtechniques.com to upgrade manually for testing."
         );
@@ -54,7 +55,6 @@ export default function PricingClient({ tiers }: { tiers: TierConfig[] }) {
         throw new Error(data.error || "Checkout failed");
       }
 
-      // Redirect to Stripe Checkout
       window.location.href = data.url;
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -71,7 +71,7 @@ export default function PricingClient({ tiers }: { tiers: TierConfig[] }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {tiers.map((tier) => {
           const isFree = tier.id === "free";
           const isFeatured = tier.id === "pro";
@@ -83,14 +83,14 @@ export default function PricingClient({ tiers }: { tiers: TierConfig[] }) {
               }`}
             >
               {isFeatured && (
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D4A843] to-transparent" />
-              )}
-              {isFeatured && (
-                <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-[#D4A843]/15 border border-[#D4A843]/30">
-                  <span className="font-[family-name:var(--font-mono)] text-[10px] text-[#D4A843] uppercase tracking-wider">
-                    Most Popular
-                  </span>
-                </div>
+                <>
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D4A843] to-transparent" />
+                  <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-[#D4A843]/15 border border-[#D4A843]/30">
+                    <span className="font-[family-name:var(--font-mono)] text-[10px] text-[#D4A843] uppercase tracking-wider">
+                      One Simple Price
+                    </span>
+                  </div>
+                </>
               )}
 
               <div className="mb-6">
@@ -113,6 +113,11 @@ export default function PricingClient({ tiers }: { tiers: TierConfig[] }) {
                     </span>
                   )}
                 </div>
+                {!isFree && (
+                  <p className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/30 text-[10px] uppercase tracking-wider mt-2">
+                    Cancel anytime · No ads · Verified badge
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-2 mb-8 flex-1">
@@ -133,21 +138,24 @@ export default function PricingClient({ tiers }: { tiers: TierConfig[] }) {
                 className={`w-full font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-6 py-4 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   isFree
                     ? "bg-[#3A2818]/40 text-[#F0E6D3]/70 hover:bg-[#3A2818]/60"
-                    : isFeatured
-                      ? "btn-3d text-[#1A0F0A]"
-                      : "bg-[#D4A843]/15 text-[#D4A843] border border-[#D4A843]/30 hover:bg-[#D4A843]/25"
+                    : "btn-3d text-[#1A0F0A]"
                 }`}
               >
                 {busy === tier.id
                   ? "Loading..."
                   : isFree
                     ? "Get Started"
-                    : `Choose ${tier.name}`}
+                    : `Go Pro — $${tier.priceMonthly / 100}/mo`}
               </button>
             </div>
           );
         })}
       </div>
+
+      <p className="text-center mt-8 font-[family-name:var(--font-mono)] text-[#F0E6D3]/30 text-xs">
+        {MAX_TRACKS_PER_USER} tracks is plenty for a best-work showcase. Most clients want to hear your
+        top {MAX_TRACKS_PER_USER} anyway.
+      </p>
     </>
   );
 }

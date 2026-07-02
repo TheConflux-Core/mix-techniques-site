@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PortfolioTrack, SubscriptionTier } from "@/lib/types";
 import PortfolioBadge from "@/components/portfolio/PortfolioBadge";
+import { MAX_TRACKS_PER_USER } from "@/lib/billing";
 
 export default function DashboardPortfolioPage() {
   const { user, loading: authLoading } = useAuth();
@@ -79,7 +80,10 @@ export default function DashboardPortfolioPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="card-float noise carbon-fiber-walnut rounded-xl p-6 text-center">
-            <div className="font-[family-name:var(--font-display)] text-3xl text-[#D4A843]">{tracks.length}</div>
+            <div className="font-[family-name:var(--font-display)] text-3xl text-[#D4A843]">
+              {tracks.length}
+              <span className="text-[#F0E6D3]/20 text-xl">/{MAX_TRACKS_PER_USER}</span>
+            </div>
             <div className="font-[family-name:var(--font-mono)] text-[10px] text-[#F0E6D3]/40 uppercase tracking-wider">Tracks</div>
           </div>
           <div className="card-float noise carbon-fiber-walnut rounded-xl p-6 text-center">
@@ -106,13 +110,13 @@ export default function DashboardPortfolioPage() {
               </a>
             )}
             {tier === "free" && (
-              <div className="flex items-center gap-3 bg-[#D4A843]/5 border border-[#D4A843]/20 rounded-xl px-5 py-4">
+              <a href="/dashboard/membership" className="flex items-center gap-3 bg-[#D4A843]/5 border border-[#D4A843]/20 rounded-xl px-5 py-4 hover:bg-[#D4A843]/10 transition-colors group">
                 <span className="text-xl">⬆️</span>
                 <div>
-                  <p className="font-[family-name:var(--font-mono)] text-sm text-[#D4A843]">Upgrade to Pro</p>
-                  <p className="font-[family-name:var(--font-mono)] text-[10px] text-[#F0E6D3]/30">Unlock portfolio features</p>
+                  <p className="font-[family-name:var(--font-mono)] text-sm text-[#D4A843] group-hover:text-[#E89B2E] transition-colors">Upgrade to Pro — $15/mo</p>
+                  <p className="font-[family-name:var(--font-mono)] text-[10px] text-[#F0E6D3]/30">Unlock portfolio with up to {MAX_TRACKS_PER_USER} tracks</p>
                 </div>
-              </div>
+              </a>
             )}
           </div>
         </div>

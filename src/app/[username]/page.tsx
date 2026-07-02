@@ -181,7 +181,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Portfolio Section — Pro/Studio only */}
+        {/* Portfolio Section — Pro only */}
         {portfolioTier !== "free" && portfolioSettings && (
           <>
             {/* Badge + Link */}

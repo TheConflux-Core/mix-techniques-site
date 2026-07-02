@@ -11,15 +11,14 @@ interface SubscriptionInfo {
 }
 
 interface Props {
-  tier: "free" | "pro" | "studio";
+  tier: "free" | "pro";
   subscription: SubscriptionInfo | null;
   userEmail: string;
 }
 
 const TIER_DISPLAY = {
-  free: { name: "Free", color: "#F0E6D3", blurb: "Public profile + community access." },
-  pro: { name: "Pro", color: "#D4A843", blurb: "Portfolio, audio uploads, themes." },
-  studio: { name: "Studio", color: "#E89B2E", blurb: "Everything in Pro + analytics + larger uploads." },
+  free: { name: "Free", color: "#F0E6D3", blurb: "Profile, submissions, voting, forum, classifieds." },
+  pro: { name: "Pro", color: "#D4A843", blurb: "Portfolio with up to 5 tracks, custom audio player, themes." },
 };
 
 export default function MembershipClient({ tier, subscription, userEmail }: Props) {
@@ -29,14 +28,14 @@ export default function MembershipClient({ tier, subscription, userEmail }: Prop
 
   const display = TIER_DISPLAY[tier];
 
-  async function handleUpgrade(targetTier: "pro" | "studio") {
+  async function handleUpgrade() {
     setError("");
-    setBusy(targetTier);
+    setBusy("upgrade");
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: targetTier }),
+        body: JSON.stringify({ tier: "pro" }),
       });
       const data = await res.json();
 
@@ -48,7 +47,6 @@ export default function MembershipClient({ tier, subscription, userEmail }: Prop
       }
 
       if (data.code === "already_subscribed") {
-        // User already has a subscription — send to portal
         return handleManage();
       }
 
@@ -90,7 +88,7 @@ export default function MembershipClient({ tier, subscription, userEmail }: Prop
     }
   }
 
-  const hasActivePaidSub = (tier === "pro" || tier === "studio") && subscription;
+  const isPaid = tier === "pro" && subscription;
 
   return (
     <>
@@ -117,7 +115,7 @@ export default function MembershipClient({ tier, subscription, userEmail }: Prop
             </p>
           </div>
 
-          {hasActivePaidSub && (
+          {isPaid && (
             <div className="text-right">
               <p className="font-[family-name:var(--font-mono)] text-[#F0E6D3]/40 text-xs uppercase tracking-wider mb-1">
                 Status
@@ -153,60 +151,34 @@ export default function MembershipClient({ tier, subscription, userEmail }: Prop
       {/* Action buttons */}
       <div className="space-y-3">
         {tier === "free" && (
-          <>
-            <button
-              onClick={() => handleUpgrade("pro")}
-              disabled={busy !== null}
-              className="w-full btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
-            >
-              {busy === "pro" ? "Loading..." : "Upgrade to Pro — $10/mo"}
-            </button>
-            <button
-              onClick={() => handleUpgrade("studio")}
-              disabled={busy !== null}
-              className="w-full bg-[#D4A843]/15 text-[#D4A843] border border-[#D4A843]/30 hover:bg-[#D4A843]/25 font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
-            >
-              {busy === "studio" ? "Loading..." : "Upgrade to Studio — $25/mo"}
-            </button>
-          </>
+          <button
+            onClick={handleUpgrade}
+            disabled={busy !== null}
+            className="w-full btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
+          >
+            {busy === "upgrade" ? "Loading..." : "Go Pro — $15/month"}
+          </button>
         )}
 
         {tier === "pro" && (
           <>
             <button
-              onClick={() => handleUpgrade("studio")}
-              disabled={busy !== null}
-              className="w-full btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
-            >
-              {busy === "studio" ? "Loading..." : "Upgrade to Studio — $25/mo"}
-            </button>
-            <button
               onClick={handleManage}
               disabled={busy !== null}
-              className="w-full bg-[#3A2818]/40 text-[#F0E6D3]/70 hover:bg-[#3A2818]/60 font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
+              className="w-full btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
             >
               {busy === "manage" ? "Loading..." : "Manage Subscription (Cancel / Update Card)"}
             </button>
           </>
         )}
 
-        {tier === "studio" && (
-          <button
-            onClick={handleManage}
-            disabled={busy !== null}
-            className="w-full btn-3d text-[#1A0F0A] font-[family-name:var(--font-display)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-lg font-bold disabled:opacity-50"
-          >
-            {busy === "manage" ? "Loading..." : "Manage Subscription (Cancel / Update Card)"}
-          </button>
-        )}
-
-        {hasActivePaidSub && (
+        {isPaid && (
           <div className="text-center pt-2">
             <Link
-              href={tier === "studio" ? "/dashboard/portfolio" : "/[username]/portfolio/edit".replace("[username]", "")}
+              href="/dashboard/portfolio"
               className="font-[family-name:var(--font-mono)] text-xs text-[#D4A843] hover:text-[#E89B2E] tracking-wider uppercase"
             >
-              {tier === "studio" ? "Open Studio Dashboard →" : "Edit Your Portfolio →"}
+              Open Portfolio Dashboard →
             </Link>
           </div>
         )}
