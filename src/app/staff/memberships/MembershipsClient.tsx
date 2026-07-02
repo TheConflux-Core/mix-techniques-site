@@ -70,6 +70,32 @@ export default function MembershipsClient({
     }
   }
 
+  async function syncFromStripe(email: string) {
+    setError("");
+    setSuccess("");
+    setBusyId(`sync-${email}`);
+    try {
+      const res = await fetch("/api/staff/memberships/sync-from-stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+
+      // Refresh the table so the new row shows up
+      const refresh = await fetch("/staff/memberships", { cache: "no-store" });
+      // (Server component re-render is what actually updates state; we hint via success)
+      setSuccess(
+        `Synced ${email} from Stripe: ${data.tier} (${data.status}). Refresh the page to see the row.`
+      );
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div className="min-h-screen carbon-fiber relative">
       <div className="fixed inset-0 warm-light-bg pointer-events-none" />
@@ -86,14 +112,24 @@ export default function MembershipsClient({
           </p>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 flex gap-3 flex-wrap">
           <input
             type="text"
             placeholder="Search by email, name, user id, or tier…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-3 bg-[#1A0F0A]/60 border border-[#3A2818]/40 rounded-lg text-[#F0E6D3] font-[family-name:var(--font-mono)] text-sm focus:outline-none focus:border-[#D4A843]/60"
+            className="flex-1 min-w-[240px] px-4 py-3 bg-[#1A0F0A]/60 border border-[#3A2818]/40 rounded-lg text-[#F0E6D3] font-[family-name:var(--font-mono)] text-sm focus:outline-none focus:border-[#D4A843]/60"
           />
+          <button
+            onClick={() => {
+              const email = window.prompt("Email of user to sync from Stripe:");
+              if (email) syncFromStripe(email.trim().toLowerCase());
+            }}
+            className="px-4 py-3 rounded-lg bg-[#D4A843]/15 border border-[#D4A843]/30 text-[#D4A843] font-[family-name:var(--font-mono)] text-xs uppercase tracking-wider hover:bg-[#D4A843]/25 transition-colors"
+            title="Pull a user's active subscription from Stripe into our DB. Use when a webhook was misconfigured."
+          >
+            Sync from Stripe
+          </button>
         </div>
 
         {error && (
