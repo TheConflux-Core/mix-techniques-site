@@ -18,7 +18,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ data: data ?? [] });
+    return NextResponse.json(data ?? []);
   } catch (err: any) {
     console.error("Forum categories error:", err?.message || err);
     return NextResponse.json(
